@@ -1,0 +1,14 @@
+{
+  "name": "warframe-builds-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for calculating Warframe and weapon builds",
+  "type": "module",
+  "bin": { "warframe-builds-mcp": "server.mjs" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED",
+  "private": true
+}

@@ -1,0 +1,56 @@
+{
+  "_note": "Written from memory, NOT checked against the game or wiki. Numbers may be wrong or out of date; edit freely, or pass overrides to the tools.",
+  "warframes": {
+    "Excalibur": { "health": 370, "shields": 270, "armor": 225, "energy": 150 },
+    "Rhino": { "health": 370, "shields": 270, "armor": 190, "energy": 150 },
+    "Saryn": { "health": 370, "shields": 270, "armor": 225, "energy": 200 },
+    "Mesa": { "health": 370, "shields": 270, "armor": 65, "energy": 150 },
+    "Wisp": { "health": 270, "shields": 270, "armor": 175, "energy": 200 },
+    "Inaros": { "health": 1100, "shields": 0, "armor": 200, "energy": 150 }
+  },
+  "weapons": {
+    "Braton Prime": { "type": "rifle", "damage": 35, "critChance": 12, "critDamage": 2.0, "statusChance": 26, "fireRate": 9.58, "magazine": 50, "reload": 2.15 },
+    "Soma Prime": { "type": "rifle", "damage": 12, "critChance": 30, "critDamage": 3.0, "statusChance": 10, "fireRate": 15, "magazine": 200, "reload": 3.0 },
+    "Tigris Prime": { "type": "shotgun", "damage": 1560, "critChance": 10, "critDamage": 2.0, "statusChance": 30, "fireRate": 2, "magazine": 2, "reload": 1.8 },
+    "Lex Prime": { "type": "pistol", "damage": 180, "critChance": 25, "critDamage": 2.0, "statusChance": 25, "fireRate": 2.08, "magazine": 8, "reload": 2.35 }
+  },
+  "warframeMods": {
+    "Vitality": { "maxRank": 10, "drain": 12, "polarity": "vazarin", "effects": { "health": 100 } },
+    "Redirection": { "maxRank": 10, "drain": 12, "polarity": "vazarin", "effects": { "shields": 100 } },
+    "Steel Fiber": { "maxRank": 10, "drain": 12, "polarity": "vazarin", "effects": { "armor": 100 } },
+    "Flow": { "family": "flow", "maxRank": 5, "drain": 9, "polarity": "naramon", "effects": { "energy": 100 } },
+    "Primed Flow": { "family": "flow", "maxRank": 10, "drain": 14, "polarity": "naramon", "effects": { "energy": 185 } },
+    "Intensify": { "maxRank": 5, "drain": 11, "polarity": "madurai", "effects": { "strength": 30 } },
+    "Transient Fortitude": { "maxRank": 10, "drain": 14, "polarity": "madurai", "effects": { "strength": 55, "efficiency": -27.5 } },
+    "Blind Rage": { "maxRank": 10, "drain": 16, "polarity": "madurai", "effects": { "strength": 99, "efficiency": -55 } },
+    "Continuity": { "family": "continuity", "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": { "duration": 30 } },
+    "Primed Continuity": { "family": "continuity", "maxRank": 10, "drain": 14, "polarity": "madurai", "effects": { "duration": 55 } },
+    "Narrow Minded": { "maxRank": 10, "drain": 14, "polarity": "vazarin", "effects": { "duration": 99, "range": -66 } },
+    "Stretch": { "maxRank": 5, "drain": 11, "polarity": "naramon", "effects": { "range": 45 } },
+    "Overextended": { "maxRank": 5, "drain": 11, "polarity": "naramon", "effects": { "range": 90, "strength": -60 } },
+    "Streamline": { "maxRank": 5, "drain": 9, "polarity": "naramon", "effects": { "efficiency": 30 } },
+    "Fleeting Expertise": { "maxRank": 5, "drain": 11, "polarity": "naramon", "effects": { "efficiency": 60, "duration": -60 } },
+    "Power Drift": { "exilus": true, "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": { "strength": 15 } },
+    "Steel Charge": { "aura": true, "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": {} },
+    "Corrosive Projection": { "aura": true, "maxRank": 5, "drain": 9, "polarity": "naramon", "effects": {} }
+  },
+  "weaponMods": {
+    "Serration": { "for": "rifle", "family": "damage", "maxRank": 10, "drain": 14, "polarity": "madurai", "effects": { "damage": 165 } },
+    "Heavy Caliber": { "for": "rifle", "maxRank": 10, "drain": 16, "polarity": "madurai", "effects": { "damage": 165 } },
+    "Split Chamber": { "for": "rifle", "maxRank": 5, "drain": 15, "polarity": "madurai", "effects": { "multishot": 90 } },
+    "Point Strike": { "for": "rifle", "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": { "critChance": 150 } },
+    "Vital Sense": { "for": "rifle", "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": { "critDamage": 120 } },
+    "Speed Trigger": { "for": "rifle", "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": { "fireRate": 60 } },
+    "Magazine Warp": { "for": "rifle", "maxRank": 5, "drain": 9, "polarity": "naramon", "effects": { "magazine": 30 } },
+    "Hellfire": { "for": "rifle", "maxRank": 5, "drain": 11, "polarity": "naramon", "effects": { "heat": 90 } },
+    "Cryo Rounds": { "for": "rifle", "maxRank": 5, "drain": 11, "polarity": "naramon", "effects": { "cold": 90 } },
+    "Stormbringer": { "for": "rifle", "maxRank": 5, "drain": 11, "polarity": "naramon", "effects": { "electricity": 90 } },
+    "Infected Clip": { "for": "rifle", "maxRank": 5, "drain": 11, "polarity": "naramon", "effects": { "toxin": 90 } },
+    "Point Blank": { "for": "shotgun", "maxRank": 10, "drain": 14, "polarity": "madurai", "effects": { "damage": 165 } },
+    "Hell's Chamber": { "for": "shotgun", "maxRank": 5, "drain": 15, "polarity": "madurai", "effects": { "multishot": 120 } },
+    "Hornet Strike": { "for": "pistol", "maxRank": 10, "drain": 14, "polarity": "madurai", "effects": { "damage": 220 } },
+    "Barrel Diffusion": { "for": "pistol", "maxRank": 5, "drain": 15, "polarity": "madurai", "effects": { "multishot": 120 } },
+    "Pistol Gambit": { "for": "pistol", "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": { "critChance": 120 } },
+    "Target Cracker": { "for": "pistol", "maxRank": 5, "drain": 9, "polarity": "madurai", "effects": { "critDamage": 60 } }
+  }
+}
