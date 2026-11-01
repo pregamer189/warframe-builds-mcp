@@ -76051,7 +76051,8 @@
   "Ambassador": {
    "Charged AoE": {
     "behavior": "adding",
-    "ratio": 0.75
+    "ratio": 0.75,
+    "note": "Radial hit only receives CO bonus on target directly hit by laser. CO-bonus scales off hitscan damage. AoE does not scale off multishot."
    }
   },
   "Arca Plasmor": {
@@ -76081,25 +76082,29 @@
   "Braton": {
    "Incarnon Form AoE": {
     "behavior": "adding",
-    "ratio": 0.95
+    "ratio": 0.95,
+    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    }
   },
   "Mk1-Braton": {
    "Incarnon Form AoE": {
     "behavior": "adding",
-    "ratio": 0.95
+    "ratio": 0.95,
+    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    }
   },
   "Braton Prime": {
    "Incarnon Form AoE": {
     "behavior": "adding",
-    "ratio": 0.95
+    "ratio": 0.95,
+    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    }
   },
   "Braton Vandal": {
    "Incarnon Form AoE": {
     "behavior": "adding",
-    "ratio": 0.95
+    "ratio": 0.95,
+    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    }
   },
   "Bubonico": {
@@ -76115,13 +76120,15 @@
   "Burston": {
    "Incarnon Form Radial Attack": {
     "behavior": "adding",
-    "ratio": 0.24
+    "ratio": 0.24,
+    "note": "Listed values for Burston Prime. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    }
   },
   "Burston Prime": {
    "Incarnon Form Radial Attack": {
     "behavior": "adding",
-    "ratio": 0.24
+    "ratio": 0.24,
+    "note": "Listed values for Burston Prime. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    }
   },
   "Buzlok": {
@@ -76149,13 +76156,15 @@
   "Cernos": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    }
   },
   "Cernos Prime": {
    "Charged Horizontal/Vertical Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    }
   },
   "Coda Bassocyst": {
@@ -76177,7 +76186,8 @@
   "Rakta Cernos": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    }
   },
   "Mutalist Cernos": {
@@ -76187,11 +76197,13 @@
    },
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    },
    "Toxin Cloud": {
     "behavior": "adding",
-    "ratio": 41
+    "ratio": 41,
+    "note": "Galvanized Aptitude uses the 205 base damage of the Uncharged Attack"
    }
   },
   "Cinta": {
@@ -76211,7 +76223,8 @@
   "Daikyu Prime": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    }
   },
   "Drakgoon": {
@@ -76223,13 +76236,15 @@
   "Kuva Drakgoon": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; uses bows mechanics; bows have innate 2x damage multiplier when fully charged"
    }
   },
   "Dread": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    },
    "Incarnon Form Charged Shot": {
     "behavior": "multiplying",
@@ -76239,7 +76254,8 @@
   "Evensong": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.65
+    "ratio": 0.65,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    },
    "Charged Radial Attack": {
     "behavior": "none",
@@ -76262,10 +76278,31 @@
     "ratio": 1
    }
   },
+  "Ferrox": {
+   "Radial Attack": {
+    "behavior": "adding",
+    "ratio": 3.5,
+    "note": "Radial hit only receives CO bonus on target directly hit by laser. CO-bonus scales off hitscan damage. AoE does not scale off multishot."
+   }
+  },
+  "Tenet Ferrox": {
+   "Radial Attack": {
+    "behavior": "adding",
+    "ratio": 3.33,
+    "note": "Radial hit only receives CO bonus on target directly hit by laser. CO-bonus scales off hitscan damage. AoE does not scale off multishot."
+   }
+  },
   "Fulmin": {
    "Semi-Auto Mode": {
     "behavior": "multiplying",
     "ratio": 1
+   }
+  },
+  "Glaxion Vandal": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1,
+    "note": "CO-bonus scales off hitscan damage. AoE does not scale off multishot."
    }
   },
   "Harpak": {
@@ -76289,25 +76326,29 @@
   "Latron": {
    "Incarnon Form": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO does not apply for Latron's AoE in any way"
    }
   },
   "Latron Prime": {
    "Incarnon Form": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO does not apply for Latron's AoE in any way"
    }
   },
   "Lanka": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.38
+    "ratio": 0.38,
+    "note": "CO-bonus only applies to base (partially charged) damage"
    }
   },
   "Miter": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.4
+    "ratio": 0.4,
+    "note": "CO-bonus only applies to base (partially charged) damage; uses bows mechanics; has innate 2x damage multiplier when fully charged"
    },
    "Incarnon Form": {
     "behavior": "multiplying",
@@ -76333,13 +76374,15 @@
   "Opticor": {
    "Charged Shot AoE": {
     "behavior": "adding",
-    "ratio": 2.5
+    "ratio": 2.5,
+    "note": "Radial hit only receives CO bonus on target directly hit by laser. CO-bonus scales off hitscan damage. AoE does not scale off multishot."
    }
   },
   "Opticor Vandal": {
    "Charged Shot AoE": {
     "behavior": "adding",
-    "ratio": 2
+    "ratio": 2,
+    "note": "Radial hit only receives CO bonus on target directly hit by laser. CO-bonus scales off hitscan damage. AoE does not scale off multishot."
    }
   },
   "Paracyst": {
@@ -76351,7 +76394,8 @@
   "Paris": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    },
    "Incarnon Form Charged Shot": {
     "behavior": "multiplying",
@@ -76361,7 +76405,8 @@
   "Paris Prime": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    },
    "Incarnon Form Charged Shot": {
     "behavior": "multiplying",
@@ -76371,7 +76416,8 @@
   "Mk1-Paris": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "CO-bonus only applies to base (uncharged) damage; bows have innate 2x damage multiplier when fully charged"
    }
   },
   "Phantasma": {
@@ -76455,11 +76501,18 @@
   "Trumna": {
    "Auto AoE": {
     "behavior": "adding",
-    "ratio": 1.64
+    "ratio": 1.64,
+    "note": "Radial hit only receives CO bonus on target directly hit by laser. CO-bonus scales off hitscan damage. AoE does not scale off multishot."
    },
    "Grenade Impact": {
     "behavior": "multiplying",
     "ratio": 1
+   }
+  },
+  "Vadarya Prime": {
+   "Normal Attack": {
+    "behavior": "none",
+    "ratio": 0
    }
   },
   "Zarr": {
@@ -76477,7 +76530,8 @@
   "Zhuge Prime": {
    "Arrow Impact": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Some damage is lost due to damage quantization, so the \"real\" in-game value is 48.4375 for both the base damage and aptitude damage"
    },
    "Arrow Explosion": {
     "behavior": "none",
@@ -76503,7 +76557,8 @@
   "Atomos": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Aegrit": {
@@ -76537,13 +76592,15 @@
   "Ballistica": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.25
+    "ratio": 0.25,
+    "note": "Uses uncharged damage value"
    }
   },
   "Ballistica Prime": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.5
+    "ratio": 0.5,
+    "note": "Uses uncharged damage value"
    },
    "Incarnon Form": {
     "behavior": "multiplying",
@@ -76553,13 +76610,15 @@
   "Rakta Ballistica": {
    "Charged Shot": {
     "behavior": "adding",
-    "ratio": 0.25
+    "ratio": 0.25,
+    "note": "Uses uncharged damage value"
    }
   },
   "Bronco Prime": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Castanas": {
@@ -76595,11 +76654,13 @@
   "Cestra": {
    "Normal Attack": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    },
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Cyanex": {
@@ -76615,7 +76676,8 @@
   "Despair": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Mara Detron": {
@@ -76627,7 +76689,8 @@
   "Tenet Detron": {
    "Normal Attack": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Only 65% effective on projectiles created by Multishot."
    },
    "Burst Shot": {
     "behavior": "adding",
@@ -76637,7 +76700,8 @@
   "Dual Toxocyst": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Epitaph": {
@@ -76653,7 +76717,8 @@
   "Furis": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Kompressa Prime": {
@@ -76665,7 +76730,8 @@
   "Kulstar": {
    "Cluster Bombs": {
     "behavior": "adding",
-    "ratio": 2.57
+    "ratio": 2.57,
+    "note": "CO-bonus uses parent projectile damage value"
    }
   },
   "Kunai": {
@@ -76675,47 +76741,55 @@
    },
    "Incarnon Form": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus DOES use base damage increase Evolution; does not factor +200% (3x) bonus vs <50% hp targets, effectively additive with it"
    }
   },
   "Mk1-Kunai": {
    "Incarnon Form": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus DOES use base damage increase Evolution; does not factor +200% (3x) bonus vs <50% hp targets, effectively additive with it"
    }
   },
   "Laetum": {
    "Normal Attack": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus multiplies properly with Devouring Attrition perk"
    },
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus multiplies properly with Devouring Attrition perk"
    }
   },
   "Lato Vandal": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Lex Prime": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Tenet Plinx": {
    "Alt-Fire": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Scales properly with magazine size"
    }
   },
   "Pox": {
    "Poison Cloud": {
     "behavior": "adding",
-    "ratio": 2.5
+    "ratio": 2.5,
+    "note": "CO-bonus uses to Spore Impact damage value. Damage recalculates on every tick"
    }
   },
   "Seer": {
@@ -76783,13 +76857,15 @@
   "Tysis": {
    "Normal Attack": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Does not affect DoT"
    }
   },
   "Vasto Prime": {
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Zakti": {
@@ -76807,17 +76883,20 @@
   "Zylok": {
    "Incarnon Form Radial Attack": {
     "behavior": "adding",
-    "ratio": 0.9
+    "ratio": 0.9,
+    "note": "Listed Values for Zylok Prime with inactive Precision's Payoff. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    }
   },
   "Zylok Prime": {
    "Incarnon Form Radial Attack": {
     "behavior": "adding",
-    "ratio": 0.9
+    "ratio": 0.9,
+    "note": "Listed Values for Zylok Prime with inactive Precision's Payoff. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
    },
    "Incarnon Form": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "CO-bonus does not use base damage increase Evolution"
    }
   },
   "Zymos": {
@@ -76829,7 +76908,8 @@
   "Argo & Vel": {
    "Heavy Attack Glaive": {
     "behavior": "adding",
-    "ratio": 0.33
+    "ratio": 0.33,
+    "note": "Also does not factor Melee Combo multiplier."
    }
   },
   "Corufell": {
@@ -76859,21 +76939,25 @@
   "Arum Spinosa": {
    "First Heavy Attack - Toxic Spines": {
     "behavior": "adding",
-    "ratio": 0.2
+    "ratio": 0.2,
+    "note": "Also does not factor Melee Combo multiplier."
    },
    "Second Heavy Attack - Toxic Spines": {
     "behavior": "adding",
-    "ratio": 0.1
+    "ratio": 0.1,
+    "note": "Also does not factor Melee Combo multiplier."
    }
   },
   "Quassus Prime": {
    "First Heavy Attack - Ethereal Daggers": {
     "behavior": "adding",
-    "ratio": 0.4
+    "ratio": 0.4,
+    "note": "Also does not factor Melee Combo multiplier."
    },
    "Second Heavy Attack - Ethereal Daggers": {
     "behavior": "adding",
-    "ratio": 0.2
+    "ratio": 0.2,
+    "note": "Also does not factor Melee Combo multiplier."
    }
   },
   "Stropha": {
@@ -76895,7 +76979,8 @@
   "Tenet Grigori": {
    "Energy Disk": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "The Energy Disk's damage does not increase with melee base damage sources such as Pressure Point and Arcane Fury. However, universal weapon damage bonuses such as Arcane Arachne, Symphony of Mercy, etc., do increase the Energy Disk's damage and are affected by CO multiplicatively."
    }
   },
   "Verdilac": {
@@ -76913,15 +76998,18 @@
   "Arbucep": {
    "1st Attack": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Consistent on all 6 projectiles. Deals 130 instead of 32. Does not apply to the 228 damage AoE"
    },
    "2nd Attack": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Consistent on all 6 projectiles. Deals 130 instead of 32. Does not apply to the 228 damage AoE"
    },
    "3rd Attack": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Consistent on all 6 projectiles. Deals 130 instead of 32. Does not apply to the 228 damage AoE"
    }
   },
   "Kuva Ayanga": {
@@ -76971,11 +77059,13 @@
   "Mausolon": {
    "Auto Radial Attack": {
     "behavior": "adding",
-    "ratio": 2.5
+    "ratio": 2.5,
+    "note": "Not affected by multishot. Based on hitscan damage. Radial hit only recieves CO bonus on target struck by laser."
    },
    "Charged Shot Explosion": {
     "behavior": "adding",
-    "ratio": 0.33
+    "ratio": 0.33,
+    "note": "Actual damage is 5x higher than UI displays. Not affected by multishot. Based on hitscan damage. Radial hit only recieves CO bonus on target struck by laser."
    }
   },
   "Velocitus": {
@@ -76991,31 +77081,68 @@
   "Noctua": {
    "Normal Attack": {
     "behavior": "adding",
-    "ratio": 0.8
+    "ratio": 0.8,
+    "note": "CO scaling value of 200 does not scale with Ability Strength."
+   },
+   "Active Attack": {
+    "behavior": "adding",
+    "ratio": 0.91,
+    "note": "CO scaling value of 2500 does not scale with Ability Strength."
+   }
+  },
+  "Artemis Bow": {
+   "Base Uncharged Shot": {
+    "behavior": "adding",
+    "ratio": 0.3125,
+    "note": "Scales off 75 base damage per projectile instead of 240, unaffected by Power Strength. Does not work while Concentrated Arrow is equipped."
+   },
+   "Base Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.3125,
+    "note": "Scales off 75 base damage per projectile instead of 240, unaffected by Power Strength. Does not work while Concentrated Arrow is equipped."
+   },
+   "Concentrated Arrow Uncharged Shot": {
+    "behavior": "none",
+    "ratio": 0,
+    "note": "Doesn't work while Concentrated Arrow is equipped."
+   },
+   "Concentrated Arrow Uncharged Headshot Explosion": {
+    "behavior": "none",
+    "ratio": 0,
+    "note": "Doesn't work while Concentrated Arrow is equipped."
+   },
+   "Concentrated Arrow Charged Shot": {
+    "behavior": "none",
+    "ratio": 0,
+    "note": "Doesn't work while Concentrated Arrow is equipped."
    }
   },
   "Burst Laser": {
    "Normal Attack": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Listed Values for Burst Laser Prime."
    }
   },
   "Prisma Burst Laser": {
    "Normal Attack": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Listed Values for Burst Laser Prime."
    }
   },
   "Burst Laser Prime": {
    "Normal Attack": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Listed Values for Burst Laser Prime."
    }
   },
   "Cryotra": {
    "Direct Hit": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "note": "UI damage number combines direct hit (10 damage) and lingering cloud AoE (20 damage). As usual, CO does not apply to the AoE."
    }
   },
   "Helstrum": {
@@ -77045,7 +77172,18 @@
   "Stinger": {
    "Normal Attack": {
     "behavior": "adding",
-    "ratio": 1
+    "ratio": 1,
+    "note": "Does not apply to embedded DoT."
+   }
+  },
+  "Vulcax": {
+   "Impact": {
+    "behavior": "adding",
+    "ratio": 1.67
+   },
+   "Radial Attack": {
+    "behavior": "adding",
+    "ratio": 1.67
    }
   },
   "Vulklok": {
@@ -77053,6 +77191,562 @@
     "behavior": "multiplying",
     "ratio": 1
    }
+  }
+ },
+ "conditionOverloadKitguns": {
+  "Catchmoon": {
+   "primary": {
+    "behavior": "multiplying",
+    "ratio": 1,
+    "grip": "Tremor"
+   },
+   "secondary": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Sporelacer": {
+   "primary": {
+    "behavior": "multiplying",
+    "ratio": 1,
+    "grip": "Tremor"
+   },
+   "secondary": {
+    "behavior": "adding",
+    "ratio": 0.63,
+    "note": "Some reason CO-bonus uses 57 damage value for any configuration",
+    "fixedBonus": 57
+   }
+  },
+  "Tombfinger": {
+   "primary": {
+    "behavior": "multiplying",
+    "ratio": 1,
+    "grip": "Brash"
+   },
+   "secondary": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  }
+ },
+ "conditionOverloadStances": {
+  "Butcher's Revelry": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.5,
+   "Block": 0.56,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Defiled Snapdragon": {
+   "Neutral": 0.87,
+   "Forward": 0.85,
+   "Forward Block": 0.75,
+   "Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Vermillion Storm": {
+   "Neutral": 0.62,
+   "Forward": 0.78,
+   "Forward Block": 1.28,
+   "Block": 0.67,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 0.44,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Four Riders": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.53,
+   "Block": 0.63,
+   "Slide Attack": 1
+  },
+  "Malicious Raptor": {
+   "Neutral": 0.58,
+   "Forward": 0.78,
+   "Forward Block": 0.58,
+   "Block": 0.58
+  },
+  "Homing Fang": {
+   "Neutral": 0.53,
+   "Forward": 1,
+   "Forward Block": 0.75,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 0.63,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 0.4
+  },
+  "Pointed Wind": {
+   "Neutral": 0.5,
+   "Forward": 1
+  },
+  "Stinging Thorn": {
+   "Neutral": 0.59,
+   "Forward": 0.75,
+   "Forward Block": 0.73,
+   "Block": 0.75
+  },
+  "Gnashing Payara": {
+   "Neutral": 0.36,
+   "Forward": 0.8,
+   "Forward Block": 0.73,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 0.4
+  },
+  "Sinking Talon": {
+   "Neutral": 1,
+   "Forward Block": 0.75
+  },
+  "Spinning Needle": {
+   "Neutral": 1,
+   "Forward": 0.92,
+   "Forward Block": 0.93,
+   "Block": 0.43
+  },
+  "Mountain's Edge": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 0.63,
+   "Heavy Attack": 2.33
+  },
+  "Crossing Snakes": {
+   "Neutral": 1.22,
+   "Forward": 0.78,
+   "Forward Block": 0.6,
+   "Block": 0.75,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 0.63,
+   "Heavy Attack": 1
+  },
+  "Carving Mantis": {
+   "Neutral": 0.95,
+   "Forward": 1,
+   "Forward Block": 0.5,
+   "Block": 0.83
+  },
+  "Swirling Tiger": {
+   "Neutral": 0.82,
+   "Forward": 0.89,
+   "Forward Block": 0.75
+  },
+  "Fracturing Wind": {
+   "Neutral": 0.67,
+   "Forward": 1,
+   "Forward Block": 0.75,
+   "Block": 0.25,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 0.44,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Seismic Palm": {
+   "Neutral": 0.83,
+   "Forward": 1,
+   "Forward Block": 0.8,
+   "Block": 0.42
+  },
+  "Gaia's Tragedy": {
+   "Neutral": 0.89,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 0.93
+  },
+  "Astral Twilight": {
+   "Neutral": 0.77,
+   "Forward": 1,
+   "Forward Block": 0.83,
+   "Block": 0.63,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1
+  },
+  "Gleaming Talon": {
+   "Neutral": 0.62,
+   "Forward": 1,
+   "Forward Block": 0.77,
+   "Block": 1
+  },
+  "High Noon": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Bullet Dance": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 1
+  },
+  "Crushing Ruin": {
+   "Neutral": 0.79,
+   "Forward": 1,
+   "Forward Block": 0.88,
+   "Block": 0.33,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Shattering Storm": {
+   "Neutral": 0.57,
+   "Forward": 1,
+   "Forward Block": 0.33,
+   "Block": 0.68
+  },
+  "Cleaving Whirlwind": {
+   "Neutral": 1,
+   "Forward": 0.67,
+   "Forward Block": 0.6,
+   "Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Tempo Royale": {
+   "Neutral": 0.63,
+   "Forward": 1,
+   "Forward Block": 0.5,
+   "Block": 1
+  },
+  "Rending Crane": {
+   "Neutral": 1,
+   "Forward": 0.9,
+   "Forward Block": 0.4,
+   "Block": 1
+  },
+  "Galeforce Dawn": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.62,
+   "Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1.67
+  },
+  "Sundering Weave": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.88,
+   "Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1.09
+  },
+  "Cyclone Kraken": {
+   "Neutral": 0.71,
+   "Forward": 1,
+   "Forward Block": 0.45,
+   "Block": 0.82
+  },
+  "Decisive Judgement": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.65,
+   "Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Blind Justice": {
+   "Neutral": 0.58,
+   "Forward": 0.69,
+   "Forward Block": 0.71,
+   "Block": 0.71,
+   "Slide Attack": 1
+  },
+  "Tranquil Cleave": {
+   "Neutral": 0.76,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 1
+  },
+  "Atlantis Vulcan": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 0.94,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Twirling Spire": {
+   "Neutral": 0.57,
+   "Forward": 0.82,
+   "Forward Block": 1,
+   "Block": 0.67,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Bleeding Willow": {
+   "Forward": 0.8,
+   "Forward Block": 0.56
+  },
+  "Shimmering Blight": {
+   "Neutral": 0.8,
+   "Forward Block": 0.69
+  },
+  "Vulpine Mask": {
+   "Neutral": 0.88,
+   "Forward": 1,
+   "Forward Block": 0.79,
+   "Block": 0.67,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Reaping Spiral": {
+   "Neutral": 0.59,
+   "Forward": 1,
+   "Forward Block": 0.67,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Stalking Fan": {
+   "Neutral": 0.6,
+   "Forward": 1,
+   "Forward Block": 0.7
+  },
+  "Grim Fury": {
+   "Neutral": 0.62,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 0.44,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Brutal Tide": {
+   "Neutral": 1.07,
+   "Forward Block": 0.47
+  },
+  "Clashing Forest": {
+   "Neutral": 0.74,
+   "Forward": 0.8,
+   "Forward Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Flailing Branch": {
+   "Neutral": 0.67,
+   "Forward": 0.6,
+   "Forward Block": 0.5
+  },
+  "Crimson Dervish": {
+   "Neutral": 0.64,
+   "Forward": 0.83,
+   "Forward Block": 0.38,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Iron Phoenix": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.75
+  },
+  "Swooping Falcon": {
+   "Neutral": 0.58,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 0.83
+  },
+  "Vengeful Revenant": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.73,
+   "Block": 0.7
+  },
+  "Final Harbinger": {
+   "Neutral": 0.95,
+   "Forward": 0.93,
+   "Forward Block": 0.68,
+   "Block": 0.9,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Eleventh Storm": {
+   "Neutral": 0.84,
+   "Forward": 1,
+   "Forward Block": 0.88,
+   "Block": 1
+  },
+  "Gemini Cross": {
+   "Neutral": 0.93,
+   "Forward": 1,
+   "Forward Block": 0.77,
+   "Block": 0.69,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1.05
+  },
+  "Sovereign Outcast": {
+   "Neutral": 0.95,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 0.67
+  },
+  "Wise Razor": {
+   "Neutral": 0.71,
+   "Forward": 1,
+   "Forward Block": 0.71,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 0.78
+  },
+  "Slicing Feathers": {
+   "Neutral": 0.89,
+   "Forward": 1,
+   "Forward Block": 0.78,
+   "Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 0.9
+  },
+  "Votive Onslaught": {
+   "Neutral": 0.7,
+   "Forward": 1,
+   "Forward Block": 0.74,
+   "Block": 0.75
+  },
+  "Coiling Viper": {
+   "Forward": 1.1,
+   "Forward Block": 1,
+   "Slide Attack": 1,
+   "Ground Slam Strike": 1,
+   "Ground Finisher": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1,
+   "Heavy Attack": 1
+  },
+  "Burning Wasp": {
+   "Neutral": 1,
+   "Forward": 0.8,
+   "Forward Block": 1
+  },
+  "Serene Storm": {
+   "Neutral": 0.6,
+   "Forward": 0.5,
+   "Forward Block": 0.64,
+   "Block": 0.69,
+   "Slide Attack": 0.86,
+   "Ground Slam Strike": 0.5
+  },
+  "Exalted Blade": {
+   "Neutral": 1.28,
+   "Forward": 1.25,
+   "Forward Block": 1.29,
+   "Block": 1.3,
+   "Slide Attack": 1.22
+  },
+  "Primal Fury": {
+   "Neutral": 0.88,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 0.81,
+   "Air Attack": 1
+  },
+  "Ravenous Wraith": {
+   "Neutral": 0.8,
+   "Forward": 1,
+   "Forward Block": 1,
+   "Block": 0.65,
+   "Slide Attack": 1,
+   "Wall Attack": 1,
+   "Air Attack": 1
+  },
+  "Hysteria": {
+   "Neutral": 1,
+   "Forward": 1,
+   "Forward Block": 0.93,
+   "Block": 0.9,
+   "Slide Attack": 1
   }
  }
 }

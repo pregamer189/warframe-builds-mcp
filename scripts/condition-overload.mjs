@@ -33,8 +33,20 @@ const ALIASES = {
   "Arbucep|Direct Hit": ["1st Attack", "2nd Attack", "3rd Attack"], "Kuva Ayanga|Direct Hit": ["Grenade Impact"], "Corvas Prime|Uncharged Attack": ["Uncharged Shot"],
   "Grattler|Normal attack": ["Projectile Impact"], "Larkspur Prime|Alt-fire": ["Alt-Fire Projectile Impact"], "Mandonel|Uncharged Attack": ["Horizontal Spread"],
   "Mandonel|Charged attack": ["Charge"], "Mausolon|Main-fire Radial Attack": ["Auto Radial Attack"], "Mausolon|Alt-fire Radial Attack": ["Charged Shot Explosion"],
-  "Velocitus|Uncharged attack": ["Uncharged Shot"], "Noctua|Noctua Primary Fire": ["Normal Attack"], "Cryotra|Normal Attack": ["Direct Hit"], "Multron|Normal Attack": ["Projectile Impact"],
+  "Velocitus|Uncharged attack": ["Uncharged Shot"], "Noctua|Noctua Primary Fire": ["Normal Attack"], "Noctua|Noctua Alt Fire": ["Active Attack"], "Cryotra|Normal Attack": ["Direct Hit"], "Multron|Normal Attack": ["Projectile Impact"],
+  "Ferrox|Hitscan AoE Direct": ["Radial Attack"], "Tenet Ferrox|Hitscan AoE Direct": ["Radial Attack"], "Glaxion Vandal|Normal Attack Hitscan AoE": ["Normal Attack"],
+  "Vadarya Prime|Primary Fire Lightning Strikes": ["Normal Attack"], "Artemis Bow|Uncharged/Charged Attack": ["Base Uncharged Shot", "Base Charged Shot"], "Vulcax|Normal Attack + AoE": ["Impact", "Radial Attack"],
 };
+
+// Measured attacks the data has no entry for, so the bonus has nothing to apply to. Anything else unmatched is worth a look.
+const NOT_IN_DATA = new Set([
+  "Mutalist Cernos: Uncharged AoE Toxin Cloud", "Zenith: Alt-fire Disk Bonk", "Azima: Alt-Fire Turret Bullets", "Scyotid: Alt-Fire Grab", "Destreza: Spectral Rapiers",
+  "Destreza Prime: Spectral Rapiers", "Exodia Contagion: Aerial Projectile", "Tenet Agendus: Heavy Attack Wave 1", "Tenet Agendus: Heavy Attack Wave 2", "Corvas: Normal attack",
+  "Noctua: Final Verse Wordwarden", "Exalted Umbra Blade: Light Waves", "Exalted Umbra Blade: Heavy Waves", "Shwaak Prism: Normal Attack", "Phahd Scaffold: Normal Attack",
+  "Shraksun Scaffold: Normal Attack", "Sporelacer (Secondary): Bomblet Impact", "Stance: Razorwing",
+]);
+
+const KITGUN_NAME = /^(\w+) \((Primary|Secondary)\)(?: \((\w+)\))?$/;
 
 const plain = (text) => text
   .replace(/\{\{[A-Za-z]+\|([^}|]+)(?:\|[^}]*)?\}\}/g, "$1").replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1")
@@ -51,19 +63,44 @@ function catalogRows(page) {
     const header = parts.find((part) => part.startsWith("!"));
     const columns = header.replace(/^!/, "").split(/!!|\n!/).map(plain);
     const at = (label) => columns.findIndex((column) => column.startsWith(label));
-    const [weapon, attack, ratio, behavior] = [at("Weapon"), at("Attack Name"), at("CO Damage Bonus Relative"), at("Math/Behavior")];
+    const [weapon, attack, ratio, behavior, notes] = [at("Weapon"), at("Attack Name"), at("CO Damage Bonus Relative"), at("Math/Behavior"), at("Notes")];
     for (const part of parts) {
       if (!part.startsWith("|")) continue;
       const cells = part.replace(/^\|/, "").split(/\|\||\n\|/).map(plain);
-      if (cells[behavior]) rows.push({ weapons: cells[weapon].split("/").map((name) => name.trim()), attack: cells[attack], ratio: cells[ratio], behavior: cells[behavior] });
+      if (cells[behavior]) rows.push({ weapons: cells[weapon].split("/").map((name) => name.trim()), attack: cells[attack], ratio: cells[ratio], behavior: cells[behavior], note: notes < 0 ? "" : cells[notes] ?? "" });
     }
   }
   return rows;
 }
 
-// { weapon: { attack: { behavior, ratio } } }, where ratio is the share of the listed bonus the attack really gets.
-export function importConditionOverload(page, weapons) {
+// { stance: { input: share } }, how much of the bonus each combo keeps. Blank cells are untested, so they're left out.
+function stanceShares(page, stances, unmapped) {
+  const start = page.indexOf("===Stances===");
+  const [, table] = page.slice(start).match(/\{\|[^\n]*\n([\s\S]*?)\n\|\}/);
+  const parts = table.split(/(?:^|\n)\|-\n?/);
+  const columns = parts.find((part) => part.startsWith("!")).replace(/^!/, "").split("!!").map(plain);
+  const shares = {};
+  for (const part of parts) {
+    if (!part.startsWith("|")) continue;
+    const cells = part.replace(/^\|/, "").split("||").map(plain);
+    const stance = cells[columns.indexOf("Stance")];
+    if (!stances[stance]) {
+      if (!NOT_IN_DATA.has(`Stance: ${stance}`)) unmapped.push(`Stance: ${stance}`);
+      continue;
+    }
+    columns.forEach((input, index) => {
+      const share = Number.parseFloat(cells[index]) / 100;
+      if (index > 1 && !Number.isNaN(share)) (shares[stance] ??= {})[input] = share;
+    });
+  }
+  return shares;
+}
+
+// { weapon: { attack: { behavior, ratio, note? } } }, where ratio is the share of the listed bonus the attack really gets.
+// Kitguns are listed separately by chamber and slot, because their attacks only exist once they're built.
+export function importConditionOverload(page, weapons, stances = {}) {
   const behaviors = {};
+  const kitguns = {};
   const unmapped = [];
   for (const row of catalogRows(page)) {
     const multiplying = row.behavior === "Multiplying";
@@ -71,15 +108,25 @@ export function importConditionOverload(page, weapons) {
     const ratio = none ? 0 : Number.parseFloat(row.ratio) / 100;
     if (!none && !multiplying && row.behavior !== "Adding") continue;
     if (Number.isNaN(ratio)) continue;
+    const measured = { behavior: none ? "none" : multiplying ? "multiplying" : "adding", ratio, ...(row.note && !/^Does not apply$/i.test(row.note) && { note: row.note }) };
     for (const name of row.weapons) {
+      const kitgun = name.match(KITGUN_NAME);
+      if (kitgun && row.attack === "Normal Attack") {
+        // One Kitgun's bonus reads a fixed number, whatever the grip makes its damage.
+        const fixed = row.note.match(/uses (\d+) damage value for any configuration/);
+        (kitguns[kitgun[1]] ??= {})[kitgun[2].toLowerCase()] = { ...measured, ...(kitgun[3] && { grip: kitgun[3] }), ...(fixed && { fixedBonus: Number(fixed[1]) }) };
+        continue;
+      }
       const modes = weapons[name]?.modes.map((mode) => mode.name) ?? [];
       const exact = modes.find((mode) => sameName(mode) === sameName(row.attack));
       const targets = exact ? [exact] : (ALIASES[`${name}|${row.attack}`] ?? []).filter((mode) => modes.includes(mode));
-      if (!targets.length) unmapped.push(`${name}: ${row.attack}`);
-      for (const mode of targets) {
-        (behaviors[name] ??= {})[mode] = { behavior: none ? "none" : multiplying ? "multiplying" : "adding", ratio };
-      }
+      if (!targets.length && !NOT_IN_DATA.has(`${name}: ${row.attack}`)) unmapped.push(`${name}: ${row.attack}`);
+      for (const mode of targets) (behaviors[name] ??= {})[mode] = measured;
     }
   }
-  return { behaviors, unmapped };
+  // The catalog's note on the Artemis Bow: the bonus stops working with Concentrated Arrow equipped.
+  for (const { name } of weapons["Artemis Bow"]?.modes ?? []) {
+    if (name.startsWith("Concentrated Arrow")) (behaviors["Artemis Bow"] ??= {})[name] = { behavior: "none", ratio: 0, note: "Doesn't work while Concentrated Arrow is equipped." };
+  }
+  return { behaviors, kitguns, stances: stanceShares(page, stances, unmapped), unmapped };
 }

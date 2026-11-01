@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { parseLuaAfter } from "./scripts/lua.mjs";
 
 const server = fileURLToPath(new URL("./server.mjs", import.meta.url));
+const data = JSON.parse(readFileSync(new URL("./data.json", import.meta.url), "utf8"));
 // Tests never touch the network or the real profile.
 const home = mkdtempSync(join(tmpdir(), "warframe-builds-test-"));
 process.env.WARFRAME_BUILDS_HOME = home;
@@ -75,6 +76,60 @@ test("Condition Overload bonuses follow each attack's measured behaviour", () =>
   const blast = call("weapon_build", { weapon: "Ogris", attack: "Rocket Explosion", mods: ["Galvanized Aptitude"], conditionals: true, status_types_on_target: 3 });
   assert.equal(blast.condition_overload.share_of_listed_bonus_pct, 0);
   assert.equal(call("weapon_build", { weapon: "Braton" }).condition_overload, undefined);
+  // Data marks these as radial even though their names don't say so.
+  for (const [weapon, attack] of [["Penta", "Grenade Detonation"], ["Lenz", "Bubble Collapse"], ["Azima", "Turret Expiry"], ["Ferrox", "Attraction Field"]]) {
+    assert.equal(call("weapon_build", { weapon, attack, mods: ["Galvanized Aptitude"] }).condition_overload?.behavior ?? "none", "none", `${weapon} ${attack}`);
+  }
+  // A melee slam is radial too, but it isn't excluded.
+  assert.equal(call("weapon_build", { weapon: "Skana", attack: "Slam Attack", mods: ["Condition Overload"] }).condition_overload.behavior, "adding");
+});
+
+test("Condition Overload's measured attacks use the wiki's share and notes", () => {
+  const overload = (weapon, attack) => call("weapon_build", { weapon, attack }).condition_overload;
+  assert.equal(overload("Vadarya Prime", "Normal Attack").behavior, "none");
+  assert.equal(overload("Noctua", "Active Attack").share_of_listed_bonus_pct, 91);
+  assert.equal(overload("Artemis Bow", "Base Charged Shot").share_of_listed_bonus_pct, 31.25);
+  assert.equal(overload("Artemis Bow", "Concentrated Arrow Charged Shot").behavior, "none");
+  const ferrox = overload("Ferrox", "Radial Attack");
+  assert.equal(ferrox.share_of_listed_bonus_pct, 350);
+  assert.match(ferrox.measurement_note, /directly hit/);
+});
+
+test("Condition Overload's Kitgun measurements follow the chamber and slot", () => {
+  const { primary, secondary } = data.modular.kitgun;
+  const kitgun = (parts, chamber, grip) => ({ chamber, grip, loader: Object.keys(parts.loaders)[0] });
+  const overload = (build) => call("weapon_build", { kitgun: build }).condition_overload;
+  assert.equal(overload(kitgun(primary, "Catchmoon", "Tremor")).behavior, "multiplying");
+  assert.equal(overload(kitgun(primary, "Catchmoon", "Tremor")).source, undefined);
+  assert.match(overload(kitgun(primary, "Catchmoon", "Brash")).source, /Tremor grip/);
+  assert.equal(overload(kitgun(secondary, "Catchmoon", secondary.grips[0])).behavior, "multiplying");
+  // Sporelacer's bonus reads 57 damage on every grip, so its share changes with the grip's damage.
+  for (const grip of secondary.grips) {
+    const total = Object.values(secondary.chambers.Sporelacer.damage[grip]).reduce((sum, value) => sum + value, 0);
+    assert.ok(Math.abs(overload(kitgun(secondary, "Sporelacer", grip)).share_of_listed_bonus_pct - (5700 / total)) < 0.01, grip);
+  }
+  assert.equal(overload(kitgun(primary, "Gaze", primary.grips[0])), undefined);
+});
+
+test("Condition Overload's stance combos keep their measured share", () => {
+  const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 0.01, `${actual} vs ${expected}`);
+  const claws = Object.keys(data.weapons).find((name) => data.weapons[name].type === "Claws");
+  const build = (mods, status_types_on_target = 2) => call("weapon_build", {
+    weapon: claws, stance: "Vermillion Storm", mods, status_types_on_target, catalyst: false,
+  }).stance_combos.combos;
+  const without = build([]);
+  const withBonus = build(["Condition Overload"]);
+  const share = data.conditionOverloadStances["Vermillion Storm"];
+  withBonus.forEach((combo, index) => {
+    close(combo.dps / without[index].dps, 1 + 0.8 * 2 * share[combo.input]);
+    assert.equal(combo.condition_overload_share_pct, share[combo.input] === 1 ? undefined : share[combo.input] * 100);
+  });
+  // With no statuses there's no bonus to lose, so nothing is marked.
+  assert.equal(build(["Condition Overload"], 0).some((combo) => combo.condition_overload_share_pct), false);
+  // A heavy attack's share counts too: Mountain's Edge gets 233%.
+  const nikana = Object.keys(data.weapons).find((name) => data.weapons[name].type === data.stances["Mountain's Edge"].weaponType);
+  const heavy = (mods, stance) => call("weapon_build", { weapon: nikana, mods, stance, status_types_on_target: 1, catalyst: false }).heavy_attack.damage;
+  close(heavy(["Condition Overload"], "Mountain's Edge") / heavy([], "Mountain's Edge"), 1 + 0.8 * 2.33);
 });
 
 test("special rules keep their source and what later checks found", () => {
