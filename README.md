@@ -101,12 +101,13 @@ Formulas come from the Warframe wiki, and the tests check them against the wiki'
 | `contradicted` | The wiki or a patch says otherwise |
 | `fixed` | It no longer works |
 
-These checks were done by AI reading captions, notes and wiki text, **not by testing in-game**, and the calculators don't apply these rules. The file only updates with a new version of the server, and later patches aren't checked until then.
+These checks were done by AI reading captions, notes and wiki text, **not by testing in-game**, and the calculators don't apply these rules, except for Condition Overload (see [Limits](#limits)). The file only updates with a new version of the server, and later patches aren't checked until then.
 
 ## Limits
 
 - **Left out of damage:** enemy health and time to kill, weak points, shields, armor stripped by status effects, ability buffs (unless passed through `extra_effects`), status duration mods, forced procs and the game's 1/32 damage rounding.
 - **Ability numbers:** `warframe_build` lists each ability's values at your build's stats, such as Spores' starting damage. They aren't damage to an enemy, as armor, factions, stacking and the ability's own caps aren't applied. Kill speed isn't calculated.
+- **Condition Overload:** Galvanized mods and similar bonuses use the wiki's per-attack measurements, including attacks where they multiply instead of adding. Much of this is likely unintended but long-standing, and results show which applies under `condition_overload`. Stance combo multipliers for it, Kitguns and a few attacks without a clear match aren't included.
 - **Triggered effects:** Galvanized mods and arcanes only count when you set `conditionals: true`, and then always at full stacks. That makes the result a peak, not an average.
 - **Listed, not calculated:** set bonuses, most aura effects on squadmates and weapons, and other effects with no fixed number. They appear in `not_calculated`.
 - **Melee:** per-combo stance DPS ignores stance slash and status multipliers. Plain `burst_dps` ignores the stance completely.

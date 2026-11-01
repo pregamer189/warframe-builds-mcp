@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Regenerates data.json from WFCD warframe-items, plus the Warframe wiki for rank 30 stats.
 import { writeFileSync } from "node:fs";
+import { importConditionOverload } from "./condition-overload.mjs";
 import { parseLua, parseLuaAfter } from "./lua.mjs";
 
 const WFCD = "https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json";
@@ -745,6 +746,7 @@ const [
   fetchText(WIKI_MODULE("Modular/data")),
 ]);
 const wikiAbilities = await fetchText(WIKI_MODULE("Ability/data"));
+const wikiConditionOverload = await wikiPage("Condition Overload (Mechanic)");
 const wikiEnemies = await Promise.all(ENEMY_MODULES.map((name) => fetchText(WIKI_MODULE(`Enemies/data/${name}`))));
 
 const wiki = parseWikiWarframes(wikiLua);
@@ -787,6 +789,10 @@ check(arcanes["Arcane Fury"]?.weaponConditional?.[0].appliesTo === "Melee Weapon
 check(warframeMods["Power Donation"]?.effects.strength === -30 && warframeMods.Physique?.effects.health === 20, "aura effects");
 check(weapons["Exalted Blade"]?.exalted && weapons["Exalted Blade"].slot === "melee", "Exalted Blade");
 check(weapons.Larkspur?.slot === "archgun" && weapons.Veritux?.slot === "archmelee", "Archwing weapons");
+const { behaviors: conditionOverload, unmapped: conditionOverloadUnmapped } = importConditionOverload(wikiConditionOverload, weapons);
+check(conditionOverload["Arca Plasmor"]?.["Normal Attack"]?.behavior === "multiplying", "Arca Plasmor multiplies Condition Overload");
+check(conditionOverload["Mutalist Cernos"]?.["Toxin Cloud"]?.ratio === 41, "Mutalist Cernos cloud reads the wrong base damage");
+check(Object.keys(conditionOverload).length >= 70, "too few Condition Overload measurements");
 check(weapons["Adarza Claws"]?.slot === "claws" && weapons["Deth Machine Rifle"]?.slot === "primary", "companion weapons");
 check(weaponMods["Blood Rush"]?.blockedTags?.includes("POWER_WEAPON"), "Blood Rush is blocked on Exalted weapons");
 check(stances["Blind Justice"]?.combos.some((c) => c.input === "Forward" && c.duration === 3.05), "Blind Justice timing");
@@ -849,9 +855,11 @@ const data = {
   enemies,
   modular,
   heavyMultipliers: HEAVY_MULTIPLIERS,
+  conditionOverload,
 };
 writeFileSync(OUTPUT, `${JSON.stringify(data, null, 1)}\n`);
 
+console.log(`Condition Overload: ${Object.keys(conditionOverload).length} weapons measured. Not matched to an attack: ${conditionOverloadUnmapped.join("; ")}.`);
 console.log(`Enemies: ${Object.keys(enemies).length}. Conclave mods opened to PvE: ${reopened.length} (${reopened.join(", ")}).`);
 console.log(`Warframes: ${Object.keys(frames).length} (rank 30 from wiki ${counts.wiki}, base frame ${counts.baseFrame}, default rule ${counts.defaultRule})`);
 console.log(`Weapons: ${Object.keys(weapons).length} (${Object.values(weapons).filter((w) => w.slot === "melee").length} melee, ${Object.values(weapons).filter((w) => w.heavyUnconfirmed).length} with unconfirmed heavy attacks)`);

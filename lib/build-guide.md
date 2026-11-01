@@ -43,13 +43,14 @@ Text doesn't always match what the game does, and these reports are often where 
 - Look for ways to build around rules with `no_later_change`, especially `surprising` ones with `tested_in_video`.
 - Read each rule's status first. For `changed`, follow `later_patch`, not the report. Don't build on `contradicted` or `fixed` ones, and warn the player if they ask for one.
 - A rule isn't calculated. Put it under **Theory** with its video date, and link its source. If it gives a number, you may pass it through `extra_effects`, and say that you did.
+- When `condition_overload.behavior` is `multiplying`, Galvanized mods and Condition Overload multiply with mods like Serration instead of adding, so build both. Pass `status_types_on_target` to see it. The result's share also shows attacks that get more or less than the listed bonus.
 - Rules can go out of date. If the player's game is newer than `checked_through`, say so.
 
 ## Present each build
 
 - **Idea:** one sentence on how it works, and how to play it. Base play advice on the ability text, and say when it's your inference.
 - **Mods:** the list with polarities and Forma, plus aura, Exilus, arcanes and Archon Shards when they matter.
-- **Calculated:** the numbers from the tool, including `ability_numbers`. These are listed values at the build's stats, so they don't show how fast it kills. Don't claim a build is strong against an enemy on their strength alone.
+- **Calculated:** the numbers from the tool, including `condition_overload` when it's unusual, and `ability_numbers`. These are listed values at the build's stats, so they don't show how fast it kills. Don't claim a build is strong against an enemy on their strength alone.
 - **Theory:** interactions you inferred from the text, special rules, and how to test them in the Simulacrum.
 - **Missing:** mods from the build that the profile lists as missing, and a substitute if there is one.
 
