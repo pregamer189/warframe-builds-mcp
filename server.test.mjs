@@ -42,7 +42,7 @@ test("completes the MCP handshake and lists tools", () => {
   assert.deepEqual(list.result.tools.map((t) => t.name), [
     "build_guide", "list_warframes", "list_weapons", "list_enemies", "list_modular_parts", "search_mods", "search_arcanes", "warframe_build", "weapon_build",
     "suggest_weapon_build", "suggest_warframe_build", "explore_synergies", "get_profile", "update_profile", "save_build", "delete_saved_build",
-    "market_price", "sell_advice", "alecaframe_account", "data_info",
+    "market_price", "sell_advice", "alecaframe_account", "special_rules", "data_info",
   ]);
   const writers = list.result.tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name);
   assert.deepEqual(writers, ["update_profile", "save_build", "delete_saved_build"]);
@@ -56,6 +56,34 @@ test("warframe_build lists ability values at the build's stats", () => {
   assert.equal(spores.duration.find((n) => n.listed.includes("decay")).at_build, undefined);
   assert.match(note, /not damage to an enemy/);
   assert.equal(call("warframe_build", { warframe: "Saryn Prime", extra_effects: { duration: -200 } }).abilities.duration, 12.5);
+});
+
+test("special rules keep their source and what later checks found", () => {
+  const { rules, checked_through: checked } = JSON.parse(readFileSync(new URL("./lib/special-rules.json", import.meta.url), "utf8"));
+  assert.ok(rules.length > 100);
+  assert.match(checked.patch, /^\d+\.\d+/);
+  for (const rule of rules) {
+    assert.ok(rule.subjects.length && rule.reported && rule.build_impact);
+    assert.ok(["no_later_change", "changed", "disputed", "contradicted", "fixed"].includes(rule.status));
+    assert.match(rule.source.url, /^https:\/\/youtu\.be\/[\w-]+\?t=\d+$/);
+    assert.match(rule.source.uploaded, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(rule.source.uploaded <= checked.date);
+    if (rule.status === "changed") assert.ok(rule.later_patch, rule.reported);
+  }
+});
+
+test("special rules are searchable and appear with the items they name", () => {
+  const found = call("special_rules", { query: "condition overload" });
+  assert.ok(found.total > 0);
+  assert.match(found.note, /not calculated/);
+  assert.ok(call("special_rules", { status: "changed", limit: 60 }).rules.every((r) => r.later_patch));
+  const banshee = call("explore_synergies", { warframe: "Banshee", theme: "sonar" });
+  const sonar = banshee.special_rules.find((r) => r.subjects.includes("Sonar") && r.status === "changed");
+  assert.match(sonar.later_patch.detail, /Weak Point/i);
+  const build = call("weapon_build", { weapon: "Soma Prime", mods: ["Galvanized Aptitude"] });
+  assert.ok(build.special_rules.length <= 5 && build.special_rules[0].uploaded);
+  assert.equal(build.special_rules[0].source, undefined);
+  assert.equal(call("warframe_build", { warframe: "Not A Frame" }).special_rules, undefined);
 });
 
 test("the lite skill and installable file are valid", () => {

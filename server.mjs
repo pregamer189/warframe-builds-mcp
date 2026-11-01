@@ -8,6 +8,7 @@ import { warframeBuild } from "./lib/frames.mjs";
 import { marketPrice, sellAdvice } from "./lib/market.mjs";
 import { deleteBuild, firstTime, getProfile, loadProfile, saveBuild, suggestionLimits, updateProfile } from "./lib/profile.mjs";
 import { suggestWarframeBuild, suggestWeaponBuild } from "./lib/suggest.mjs";
+import { rulesFor, specialRules } from "./lib/special-rules.mjs";
 import { exploreSynergies } from "./lib/synergy.mjs";
 import { armorAtLevel } from "./lib/target.mjs";
 import { checkForUpdates, latestKnownVersion, newerVersion, stopUpdates } from "./lib/update.mjs";
@@ -103,6 +104,10 @@ const withProfile = (run, table) => ({ use_profile = true, ...args }) => {
   const result = run({ ...args, exclude: [...(args.exclude ?? []), ...limits.exclude], ...(limits.only_mods && !args.only_mods && { only_mods: limits.only_mods }) });
   return { ...result, ...(applied && { profile_applied: { mode: profile.mods_mode, mods_marked_missing: limits.exclude.length, ...(limits.only_mods && { mods_owned: limits.only_mods.length }) } }) };
 };
+// Adds what players have reported about the items a result uses. An error result stays as it is.
+const itemName = (item) => (typeof item === "string" ? item : item?.name);
+const usedItems = ({ warframe, weapon, stance, aura, second_aura, exilus, mods = [], arcanes = [] }) => [warframe, weapon, stance, aura, second_aura, exilus, ...mods, ...arcanes].map(itemName);
+const withRules = (run) => (args) => ({ ...run(args), ...rulesFor(usedItems(args), { limit: 5, short: true }) });
 const ALL_MODS = () => ({ ...data.warframeMods, ...data.weaponMods });
 
 const FRAME_TABLES = () => ({ warframe: data.warframes, companion: data.companions, archwing: data.archwings, necramech: data.necramechs });
@@ -261,7 +266,7 @@ const TOOLS = [
       },
       required: ["warframe"],
     },
-    run: warframeBuild,
+    run: withRules(warframeBuild),
   },
   {
     name: "weapon_build",
@@ -285,7 +290,7 @@ const TOOLS = [
         base_stats: { type: "object", description: "Overrides: damage (by type), critChance, critDamage, statusChance, fireRate, pellets, magazine, reload, ammoCost, heavyAttack, range, windUp." },
       },
     },
-    run: weaponBuild,
+    run: withRules(weaponBuild),
   },
   {
     name: "suggest_weapon_build",
@@ -315,7 +320,7 @@ const TOOLS = [
         level: levelProp,
       },
     },
-    run: withProfile(suggestWeaponBuild, () => data.weaponMods),
+    run: withRules(withProfile(suggestWeaponBuild, () => data.weaponMods)),
   },
   {
     name: "suggest_warframe_build",
@@ -346,7 +351,7 @@ const TOOLS = [
       },
       required: ["warframe"],
     },
-    run: withProfile(suggestWarframeBuild, () => data.warframeMods),
+    run: withRules(withProfile(suggestWarframeBuild, () => data.warframeMods)),
   },
   {
     name: "explore_synergies",
@@ -362,7 +367,12 @@ const TOOLS = [
         use_profile: useProfile,
       },
     },
-    run: withProfile(exploreSynergies, ALL_MODS),
+    run: (args) => {
+      const result = withProfile(exploreSynergies, ALL_MODS)(args);
+      const abilities = (result.abilities ?? []).map(itemName);
+      const augments = (result.augments ?? []).map(itemName);
+      return { ...result, ...rulesFor([result.subject, ...abilities, ...augments]) };
+    },
   },
   {
     name: "get_profile",
@@ -438,6 +448,20 @@ const TOOLS = [
     annotations: { openWorldHint: true, idempotentHint: false },
     inputSchema: { type: "object", properties: { recent_trades: { type: "number", description: "Trades to list, up to 100. Default 10." } } },
     run: alecaframeAccount,
+  },
+  {
+    name: "special_rules",
+    description: "Find mechanics that players reported in videos and the game's text doesn't explain, such as hidden multipliers, unexpected stacking and interactions, each with its date, source and what later patches and the wiki say. Search by item, ability or idea, such as \"condition overload\", \"gas\" or \"slam\". Build results also list the rules for the items they use.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Words that must all appear in the rule. Leave out to browse." },
+        status: { type: "string", enum: ["no_later_change", "changed", "disputed", "contradicted", "fixed"], description: "Only rules with this status." },
+        surprising_only: { type: "boolean", description: "Only rules that go beyond what the game or wiki explains plainly. Default false." },
+        limit: { type: "number", description: "Most rules to return, up to 60. Default 20." },
+      },
+    },
+    run: specialRules,
   },
   {
     name: "data_info",

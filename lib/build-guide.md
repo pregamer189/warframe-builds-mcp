@@ -36,12 +36,21 @@ When `build_guide` returns `first_time: true`, or the player asks to set up:
 5. Check every build with `warframe_build` or `weapon_build`. Fix each warning, such as a conflict or going over capacity. These tools fit a mod with its `slot_polarity`, and each polarity you add beyond the item's own is a Forma to report. To plan Forma automatically, use the `forma` argument of the suggest tools.
 6. Pass ability bonuses you can read from the text through `extra_effects` only when the text gives a number, and say that you did. Never invent a number.
 
+## Special rules
+
+Text doesn't always match what the game does, and these reports are often where the strongest ideas are. `explore_synergies` and the build tools list `special_rules` for the items they name. Use `special_rules` to search for an idea or a mod from your plan.
+
+- Look for ways to build around rules with `no_later_change`, especially `surprising` ones with `tested_in_video`.
+- Read each rule's status first. For `changed`, follow `later_patch`, not the report. Don't build on `contradicted` or `fixed` ones, and warn the player if they ask for one.
+- A rule isn't calculated. Put it under **Theory** with its video date, and link its source. If it gives a number, you may pass it through `extra_effects`, and say that you did.
+- Rules can go out of date. If the player's game is newer than `checked_through`, say so.
+
 ## Present each build
 
 - **Idea:** one sentence on how it works, and how to play it. Base play advice on the ability text, and say when it's your inference.
 - **Mods:** the list with polarities and Forma, plus aura, Exilus, arcanes and Archon Shards when they matter.
 - **Calculated:** the numbers from the tool, including `ability_numbers`. These are listed values at the build's stats, so they don't show how fast it kills. Don't claim a build is strong against an enemy on their strength alone.
-- **Theory:** interactions you inferred from the text, and how to test them in the Simulacrum.
+- **Theory:** interactions you inferred from the text, special rules, and how to test them in the Simulacrum.
 - **Missing:** mods from the build that the profile lists as missing, and a substitute if there is one.
 
 Offer to save a build with `save_build` when the player likes it.
