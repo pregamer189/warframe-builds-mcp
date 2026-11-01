@@ -7,17 +7,29 @@ const WIKI = "https://wiki.warframe.com/w/Module:Warframes/data?action=raw";
 const WIKI_WEAPONS = (slot) => `https://wiki.warframe.com/w/Module:Weapons/data/${slot}?action=raw`;
 const OUTPUT = new URL("../data.json", import.meta.url);
 
-const MOD_SLOTS = { "Warframe Mod": "warframe", "Primary Mod": "primary", "Shotgun Mod": "shotgun", "Secondary Mod": "secondary" };
+const MOD_SLOTS = {
+  "Warframe Mod": "warframe", "Primary Mod": "primary", "Shotgun Mod": "shotgun", "Secondary Mod": "secondary",
+  "Melee Mod": "melee", "Stance Mod": "stance",
+};
 const WARFRAME_STATS = {
   Health: "health", "Shield Capacity": "shields", Armor: "armor", "Energy Max": "energy",
   "Ability Strength": "strength", "Ability Duration": "duration", "Ability Range": "range", "Ability Efficiency": "efficiency",
 };
 const WEAPON_STATS = {
-  Damage: "damage", Multishot: "multishot", "Critical Chance": "critChance", "Critical Damage": "critDamage",
+  Damage: "damage", "Melee Damage": "damage", "Attack Speed": "fireRate", Multishot: "multishot", "Critical Chance": "critChance", "Critical Damage": "critDamage",
   "Fire Rate": "fireRate", "Magazine Capacity": "magazine", "Reload Speed": "reload", "Status Chance": "statusChance",
   Heat: "heat", Cold: "cold", Electricity: "electricity", Toxin: "toxin",
   Impact: "impact", Puncture: "puncture", Slash: "slash",
   Blast: "blast", Corrosive: "corrosive", Gas: "gas", Magnetic: "magnetic", Radiation: "radiation", Viral: "viral",
+  "Critical Chance stacks with Combo Multiplier": "comboCritChance", "Status Chance per Combo Multiplier": "comboStatusChance",
+  "Melee Damage on Heavy Attack": "heavyDamage",
+};
+const FLAT_WEAPON_STATS = { Range: "meleeRange", "Initial Combo": "initialCombo" };
+// First heavy attack multiplier per class, from the wiki's Melee page.
+const HEAVY_MULTIPLIERS = {
+  "Assault Saw": 6, "Blade and Whip": 4, Claws: 5, Dagger: 5, "Dual Daggers": 5, "Dual Nikanas": 12, "Dual Swords": 5, Fist: 5,
+  Glaive: 2, Gunblade: 5, Hammer: 6, "Heavy Blade": 6, "Heavy Scythe": 6, Machete: 6, Nikana: 5, Nunchaku: 5, Polearm: 6,
+  Rapier: 4.5, Scythe: 6, Sparring: 12, Staff: 5, Sword: 5, "Sword and Shield": 5, Tonfa: 5, "Two-Handed Nikana": 6, Warfan: 5, Whip: 4.5,
 };
 
 const round = (n) => Math.round(n * 10000) / 10000;
@@ -91,7 +103,12 @@ function parseWikiWeapons(lua) {
       const chargeTime = attack[3].match(/ChargeTime = ([\d.]+)/)?.[1];
       attacks[attack[2]] ??= { ammoCost: Number(attack[1]), chargeTime: chargeTime && Number(chargeTime) };
     }
-    weapons[name] = { magazine: num("Magazine"), reload: num("Reload"), attacks };
+    const text = (key) => body.match(new RegExp(`^\\t\\t${key} = "([^"]+)"`, "m"))?.[1];
+    weapons[name] = {
+      magazine: num("Magazine"), reload: num("Reload"), attacks,
+      weaponClass: text("Class"), stancePolarity: text("StancePolarity")?.toLowerCase(),
+      heavyAttack: num("HeavyAttack"), range: num("MeleeRange"), windUp: num("WindUp"),
+    };
   }
   return weapons;
 }
@@ -141,16 +158,30 @@ function attackRate(attack, weapon, wikiAttack) {
   return Math.abs(attack.speed - weapon.fireRate) < 0.01 ? round(weapon.fireRate) : attack.speed;
 }
 
+// The sources disagree on some heavy attacks and often differ from the class multiplier, mostly on multi-hit
+// classes. Take a value that fits the multiplier, or flag the listed one as unconfirmed.
+function heavyAttack(w, extra, attacks) {
+  const listed = [extra?.heavyAttack, w.heavyAttackDamage].filter(Boolean);
+  if (!listed.length) return {};
+  const total = Object.values(attacks[0].damage).reduce((sum, value) => sum + value, 0);
+  const multiplier = HEAVY_MULTIPLIERS[extra?.weaponClass];
+  const fits = listed.find((value) => multiplier && Math.abs(value - total * multiplier) <= total * multiplier * 0.02);
+  return fits
+    ? { heavyAttack: fits }
+    : { heavyAttack: listed[0], heavyUnconfirmed: multiplier ? `listed damage does not match this class's ${multiplier}x heavy attack multiplier` : "no class multiplier to check it against" };
+}
+
 function importWeapons(items, wiki) {
   const weapons = {};
   for (const w of items) {
     // Some weapons list an attack with no damage ahead of their real one, which would default to 0 DPS.
     const attacks = (w.attacks ?? []).filter((a) => Object.keys(a.damage ?? {}).length);
     if (!attacks.length) continue;
-    const slot = w.type === "Shotgun" ? "shotgun" : w.category === "Primary" ? "primary" : "secondary";
+    const melee = w.category === "Melee";
+    const slot = melee ? "melee" : w.type === "Shotgun" ? "shotgun" : w.category === "Primary" ? "primary" : "secondary";
     const extra = wiki[w.name];
     weapons[w.name] = {
-      type: w.type,
+      type: melee ? extra?.weaponClass ?? "Melee" : w.type,
       slot,
       pellets: w.multishot ?? 1,
       magazine: extra?.magazine ?? w.magazineSize ?? 0,
@@ -158,6 +189,12 @@ function importWeapons(items, wiki) {
       mastery: w.masteryReq ?? 0,
       polarities: w.polarities ?? [],
       exilusPolarity: w.exilusPolarity,
+      ...(melee && {
+        stancePolarity: extra?.stancePolarity ?? w.stancePolarity,
+        ...heavyAttack(w, extra, attacks),
+        range: extra?.range ?? w.range,
+        windUp: extra?.windUp ?? w.windUp,
+      }),
       // Partial charges are listed first on some weapons, but full charges are how they are used.
       modes: attacks.map((a) => ({
         name: a.name,
@@ -178,21 +215,27 @@ function parseLines(lines, stats) {
   const other = [];
   for (const raw of lines) {
     const line = raw.replace(/<[^>]+>/g, "").replace(/\\n/g, " ").replace(/\s+/g, " ").trim();
-    const match = line.match(/^([+-]?\d+(?:\.\d+)?)% (.+?)(?: \(x(\d+(?:\.\d+)?) for Bows\))?$/);
+    const flat = stats === WEAPON_STATS && line.match(/^([+-]?\d+(?:\.\d+)?) (.+)$/);
+    if (flat && FLAT_WEAPON_STATS[flat[2]]) {
+      effects[FLAT_WEAPON_STATS[flat[2]]] = (effects[FLAT_WEAPON_STATS[flat[2]]] ?? 0) + Number(flat[1]);
+      continue;
+    }
+    const match = line.match(/^([+-]?\d+(?:\.\d+)?)% (.+?)(?: \(x(\d+(?:\.\d+)?) for (Bows|Heavy Attacks)\))?$/);
     const stat = match && stats[match[2]];
     if (!stat) {
       if (line) other.push(line);
       continue;
     }
     effects[stat] = (effects[stat] ?? 0) + Number(match[1]);
-    if (match[3]) effects.fireRateBow = Number(match[1]) * Number(match[3]);
+    if (match[4] === "Bows") effects.fireRateBow = Number(match[1]) * Number(match[3]);
+    if (match[4] === "Heavy Attacks") effects.heavyCritChance = Number(match[1]) * (Number(match[3]) - 1);
   }
   return { effects, other };
 }
 
 // Names can have several variants: tutorial Beginner/Intermediate copies, unobtainable Expert copies, and a
 // few internal duplicates. Prefer the plain mod, as "Hellfire" Expert (+165%) is not the Hellfire players own.
-function pickVariant(variants) {
+function pickVariant(variants, wikiMods) {
   let pool = variants.filter((m) => !/\/(Beginner|Intermediate)\//.test(m.uniqueName));
   if (pool.length === 0) pool = variants;
   if (pool.length > 1) {
@@ -200,8 +243,13 @@ function pickVariant(variants) {
     if (plain.length) pool = plain;
   }
   if (pool.length > 1) {
-    const standard = pool.filter((m) => /\/Mods\/(Warframe|Aura|Rifle|Shotgun|Pistol)\//.test(m.uniqueName));
+    const standard = pool.filter((m) => /\/Mods\/(Warframe|Aura|Rifle|Shotgun|Pistol|Melee)\//.test(m.uniqueName));
     if (standard.length) pool = standard;
+  }
+  if (pool.length > 1) {
+    // Pressure Point has an unlisted +200% copy in WFCD, so a variant the wiki knows wins.
+    const known = pool.filter((m) => wikiMods.byId[m.uniqueName]);
+    if (known.length) pool = known;
   }
   return pool[0];
 }
@@ -219,7 +267,7 @@ async function importMods(items, wikiMods) {
   let nonLinear = 0;
   const flawedOnly = { repaired: [], unverified: [] };
   for (const variants of groups.values()) {
-    const m = pickVariant(variants);
+    const m = pickVariant(variants, wikiMods);
     const slot = MOD_SLOTS[m.type];
     const stats = slot === "warframe" ? WARFRAME_STATS : WEAPON_STATS;
     // A Beginner or Intermediate ID points at the wiki's Flawed row, so those go by name to reach the real mod.
@@ -261,6 +309,7 @@ async function importMods(items, wikiMods) {
     };
     if (top.other.length) entry.other = top.other;
     if (m.compatName === "AURA") entry.aura = true;
+    if (slot === "stance") entry.stance = true;
     if (m.isExilus || m.isUtility) entry.exilus = true;
     if (unverified) entry.unverified = true;
     if (wikiMod?.incompatible.length) entry.incompatible = wikiMod.incompatible;
@@ -291,26 +340,29 @@ function check(condition, message) {
   if (!condition) throw new Error(`Sanity check failed: ${message}. The source format may have changed; data.json was not written.`);
 }
 
-const [warframes, primary, secondary, mods, wikiLua, wikiPrimary, wikiSecondary, wikiModsLua] = await Promise.all([
+const [warframes, primary, secondary, melee, mods, wikiLua, wikiPrimary, wikiSecondary, wikiMelee, wikiModsLua] = await Promise.all([
   fetchText(`${WFCD}/Warframes.json`).then(JSON.parse),
   fetchText(`${WFCD}/Primary.json`).then(JSON.parse),
   fetchText(`${WFCD}/Secondary.json`).then(JSON.parse),
+  fetchText(`${WFCD}/Melee.json`).then(JSON.parse),
   fetchText(`${WFCD}/Mods.json`).then(JSON.parse),
   fetchText(WIKI),
   fetchText(WIKI_WEAPONS("primary")),
   fetchText(WIKI_WEAPONS("secondary")),
+  fetchText(WIKI_WEAPONS("melee")),
   fetchText("https://wiki.warframe.com/w/Module:Mods/data?action=raw"),
 ]);
 
 const wiki = parseWikiWarframes(wikiLua);
 const { frames, counts } = importWarframes(warframes, wiki);
-const wikiWeapons = { ...parseWikiWeapons(wikiPrimary), ...parseWikiWeapons(wikiSecondary) };
-const weapons = importWeapons([...primary, ...secondary], wikiWeapons);
+const wikiWeapons = { ...parseWikiWeapons(wikiPrimary), ...parseWikiWeapons(wikiSecondary), ...parseWikiWeapons(wikiMelee) };
+// WFCD's melee file also holds Zaw parts, which are not weapons on their own. Some real melee weapons are typed Rifle there.
+const weapons = importWeapons([...primary, ...secondary, ...melee.filter((w) => w.type !== "Zaw Component")], wikiWeapons);
 const { warframeMods, weaponMods, nonLinear, flawedOnly } = await importMods(mods, parseWikiMods(wikiModsLua));
 
 // Values confirmed against the wiki's rendered pages when this script was written.
 check(Object.keys(frames).length >= 100, "too few Warframes");
-check(Object.keys(weapons).length >= 300, "too few weapons");
+check(Object.keys(weapons).length >= 500, "too few weapons");
 check(frames.Excalibur?.health === 370 && frames.Excalibur?.energy === 150, "Excalibur rank 30 stats");
 check(warframeMods.Vitality?.effects.health === 100 && warframeMods.Vitality?.maxRank === 10, "Vitality");
 check(warframeMods["Transient Fortitude"]?.effects.duration === -27.5, "Transient Fortitude");
@@ -322,11 +374,19 @@ check(weapons.Lanka?.modes[0].name === "Charged Shot" && weapons.Lanka.modes[0].
 check(warframeMods["Quick Thinking"]?.maxRank === 5 && warframeMods["Quick Thinking"]?.baseDrain === 10, "Quick Thinking rank table");
 check(warframeMods["Primed Flow"]?.incompatible?.includes("Flow"), "Primed Flow conflicts");
 check(weapons.Convectrix?.magazine === 70 && weapons.Convectrix.modes[0].ammoCost === 0.5, "Convectrix magazine");
+check(weapons["Nikana Prime"]?.heavyAttack === 990 && weapons["Nikana Prime"]?.type === "Nikana", "Nikana Prime heavy attack");
+check(weapons["Wolf Sledge"]?.heavyAttack === 1554 && !weapons["Wolf Sledge"].heavyUnconfirmed, "Wolf Sledge heavy attack");
+check(weaponMods["Killing Blow"]?.effects.heavyDamage === 120, "Killing Blow heavy damage");
+check(weapons.Paracesis?.slot === "melee", "Paracesis is typed Rifle by WFCD but is melee");
+check(weaponMods["Pressure Point"]?.effects.damage === 120 && weaponMods["Pressure Point"]?.maxRank === 5, "Pressure Point picked the wrong variant");
+check(weaponMods["True Steel"]?.effects.heavyCritChance === 120, "True Steel heavy crit");
+check(weaponMods["Blood Rush"]?.effects.comboCritChance === 40, "Blood Rush combo crit");
+check(weaponMods["Crimson Dervish"]?.stance && weaponMods["Crimson Dervish"]?.baseDrain === 2, "Crimson Dervish stance");
 
 const data = {
   meta: {
     imported: new Date().toISOString().slice(0, 10),
-    sources: ["WFCD/warframe-items (MIT)", "wiki.warframe.com data modules (rank 30 stats, magazine, reload, ammo cost)"],
+    sources: ["WFCD/warframe-items (MIT)", "wiki.warframe.com data modules (rank 30 stats, magazine, reload, ammo cost, melee class and heavy attacks)"],
     note: "Warframe game data belongs to Digital Extremes. Regenerate with npm run import-data.",
   },
   warframes: frames,
@@ -337,7 +397,7 @@ const data = {
 writeFileSync(OUTPUT, `${JSON.stringify(data, null, 1)}\n`);
 
 console.log(`Warframes: ${Object.keys(frames).length} (rank 30 from wiki ${counts.wiki}, base frame ${counts.baseFrame}, default rule ${counts.defaultRule})`);
-console.log(`Weapons: ${Object.keys(weapons).length}`);
+console.log(`Weapons: ${Object.keys(weapons).length} (${Object.values(weapons).filter((w) => w.slot === "melee").length} melee, ${Object.values(weapons).filter((w) => w.heavyUnconfirmed).length} with unconfirmed heavy attacks)`);
 console.log(`Mods: ${Object.keys(warframeMods).length} Warframe, ${Object.keys(weaponMods).length} weapon, ${nonLinear} with exact per-rank values`);
 console.log(`Flawed-only mods repaired from wiki pages: ${flawedOnly.repaired.length} (${flawedOnly.repaired.join(", ")})`);
 console.log(`Flawed-only mods left unverified: ${flawedOnly.unverified.length} (${flawedOnly.unverified.join(", ")})`);

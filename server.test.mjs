@@ -219,9 +219,10 @@ test("every weapon and Warframe calculates, and listing is capped", () => {
 
   const weaponData = call("list_weapons", { limit: 1000 }).results;
   const weapons = Object.keys(weaponData);
-  assert.ok(weapons.length >= 300);
+  assert.ok(weapons.length >= 500);
   for (const [name, build] of sweep("weapon_build", "weapon", weapons)) {
-    assert.ok(build.burst_dps > 0 && build.sustained_dps > 0, `${name} has bad DPS`);
+    const isMelee = weaponData[name].slot === "melee";
+    assert.ok(build.burst_dps > 0 && (isMelee || build.sustained_dps > 0), `${name} has bad DPS`);
     // With no mods, nothing may be lost: every damage type in the data must reach the result.
     const expected = Object.values(weaponData[name].modes[0].damage).reduce((total, v) => total + v, 0);
     assert.ok(Math.abs(build.damage_per_shot - expected) <= 0.01, `${name} lost damage: ${build.damage_per_shot} vs ${expected}`);
@@ -235,6 +236,83 @@ test("every weapon and Warframe calculates, and listing is capped", () => {
   }
 
   assert.equal(Object.keys(call("list_weapons", {}).results).length, 25);
+});
+
+test("melee follows the wiki's worked examples", () => {
+  // From the wiki's Melee page: Paracesis, Pressure Point and Fever Strike at 7x.
+  const paracesis = call("weapon_build", { weapon: "Paracesis", mods: ["Pressure Point", "Fever Strike"], combo_multiplier: 7 });
+  assert.equal(paracesis.heavy_attack.damage, 38974.32);
+  // From the Blood Rush and Weeping Wounds pages: 20% base at 4x, with True Steel or Voltaic Strike.
+  const sword = { damage: { slash: 100 }, critChance: 20, statusChance: 20 };
+  const crit = call("weapon_build", { weapon: "Skana", base_stats: sword, mods: ["True Steel", "Blood Rush"], combo_multiplier: 4 });
+  assert.equal(crit.crit_chance_pct, 68);
+  const status = call("weapon_build", { weapon: "Skana", base_stats: sword, mods: ["Voltaic Strike", "Weeping Wounds"], combo_multiplier: 4 });
+  assert.equal(status.status_chance_pct, 56);
+});
+
+test("True Steel counts twice on heavy attacks only", () => {
+  const build = call("weapon_build", {
+    weapon: "Skana", base_stats: { damage: { slash: 100 }, critChance: 10, critDamage: 2, heavyAttack: 500 }, mods: ["True Steel"],
+  });
+  assert.equal(build.crit_chance_pct, 22);
+  assert.equal(build.heavy_attack.crit_chance_pct, 34);
+  assert.equal(build.heavy_attack.damage, 500);
+  assert.equal(build.heavy_attack.average_damage_with_crits, 670);
+});
+
+test("Killing Blow adds to +damage on heavy attacks only", () => {
+  const build = call("weapon_build", {
+    weapon: "Skana", base_stats: { damage: { slash: 100 }, critChance: 0, heavyAttack: 500 }, mods: ["Pressure Point", "Killing Blow"],
+  });
+  assert.equal(build.damage_per_shot, 220);
+  assert.equal(build.heavy_attack.damage, 1700); // 500 x (1 + 1.2 + 1.2)
+});
+
+test("heavy attacks that do not fit their class multiplier are flagged", () => {
+  assert.equal(call("weapon_build", { weapon: "Nikana Prime" }).heavy_attack.unconfirmed, undefined);
+  assert.match(call("weapon_build", { weapon: "Dual Skana" }).heavy_attack.unconfirmed, /5x heavy attack multiplier/);
+  assert.match(call("weapon_build", { weapon: "Glaive" }).heavy_attack.unconfirmed, /2x heavy attack multiplier/);
+  assert.equal(call("weapon_build", { weapon: "Dual Skana", base_stats: { heavyAttack: 900 } }).heavy_attack.unconfirmed, undefined);
+  assert.equal(call("weapon_build", { weapon: "Dual Skana", base_stats: { heavyAttack: 0 } }).heavy_attack, null);
+});
+
+test("melee uses attack speed and flat range, with no magazine", () => {
+  const build = call("weapon_build", {
+    weapon: "Skana", base_stats: { damage: { slash: 100 }, critChance: 0, fireRate: 1, range: 2 }, mods: ["Fury", "Reach"],
+  });
+  assert.equal(build.attack_speed, 1.3);
+  assert.equal(build.burst_dps, 130);
+  assert.equal(build.range_m, 3.5);
+  assert.equal(build.magazine, undefined);
+  assert.equal(build.sustained_dps, undefined);
+});
+
+test("stances add capacity by polarity and warn on the wrong class", () => {
+  const capacityWith = (slot_polarity) => call("weapon_build", {
+    weapon: "Skana", stance: { name: "Crimson Dervish", slot_polarity },
+  }).mod_capacity;
+  assert.equal(capacityWith("madurai").capacity, 70);
+  assert.equal(capacityWith("naramon").capacity, 64);
+  assert.equal(capacityWith("none").capacity, 65);
+  assert.deepEqual(capacityWith("madurai").warnings, []);
+
+  const wrong = call("weapon_build", { weapon: "Nikana Prime", stance: "Crimson Dervish" });
+  assert.match(wrong.mod_capacity.warnings[0], /only fits Swords/);
+  assert.match(call("weapon_build", { weapon: "Skana", mods: ["Crimson Dervish"] }).error, /pass it as "stance"/);
+  assert.match(call("weapon_build", { weapon: "Soma Prime", stance: "Crimson Dervish" }).error, /not melee/);
+  assert.match(call("weapon_build", { weapon: "Skana", combo_multiplier: 13 }).error, /1-12/);
+});
+
+test("every stance fits a real melee class", () => {
+  const weapons = Object.values(call("list_weapons", { type: "melee", limit: 1000 }).results);
+  const { mods } = call("search_mods", { category: "stance", limit: 1000 });
+  assert.ok(mods.length >= 60);
+  const classes = new Set(weapons.map((w) => w.type.toLowerCase().replace(/^staves$/, "staff").replace(/s$/, "")));
+  // Bayonet's only weapon is Vinquibus, which WFCD lists as a primary with no melee attacks.
+  for (const stance of mods.filter((m) => m.compat !== "Bayonet")) {
+    const wanted = stance.compat.toLowerCase().replace(/^staves$/, "staff").replace(/s$/, "");
+    assert.ok(classes.has(wanted), `${stance.name} fits no class: ${stance.compat}`);
+  }
 });
 
 test("unknown names return a helpful tool error", () => {

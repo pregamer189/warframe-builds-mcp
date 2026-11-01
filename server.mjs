@@ -140,25 +140,48 @@ function combineElements(singles) {
   return result;
 }
 
+const weaponClass = (text) => text.toLowerCase().replace(/^staves$/, "staff").replace(/s$/, "");
+
+function meleeFits(compat, name, weapon) {
+  if (compat === "Melee" || weapon.type === "Melee") return true; // "Melee" as a type means the class is unknown
+  if (compat === "Thrown Melee") return weapon.modes.some((m) => /throw/i.test(m.name));
+  return weaponClass(compat) === weaponClass(weapon.type) || name.toLowerCase().includes(compat.toLowerCase());
+}
+
 function weaponCompatibility(m, name, weapon) {
-  if (m.mod.slot !== weapon.slot) return `${m.name} is a ${m.mod.slot} mod, but ${name} takes ${weapon.slot} mods.`;
+  if (m.mod.slot !== weapon.slot && !m.mod.stance) return `${m.name} is a ${m.mod.slot} mod, but ${name} takes ${weapon.slot} mods.`;
   const compat = m.mod.compat;
+  if (weapon.slot === "melee") return meleeFits(compat, name, weapon) ? undefined : `${m.name} only fits ${compat}.`;
   if (["PRIMARY", "Rifle", "Shotgun", "Pistol"].includes(compat)) return undefined;
   const byType = { "Assault Rifle": "Rifle", Sniper: "Sniper", Bow: "Bow", Thrown: "Throwing" };
   const fits = byType[compat] ? weapon.type === byType[compat] : name.toLowerCase().includes(compat.toLowerCase());
   return fits ? undefined : `${m.name} only fits ${compat}.`;
 }
 
-function weaponBuild({ weapon, mods = [], exilus, attack, catalyst = true, base_stats }) {
+function weaponBuild({ weapon, mods = [], exilus, stance, combo_multiplier, attack, catalyst = true, base_stats }) {
   const [name, record] = find(data.weapons, weapon, "weapon");
   const mode = attack
     ? record.modes.find((m) => m.name.toLowerCase() === String(attack).toLowerCase())
     : record.modes[0];
   if (!mode) throw new Error(`${name} has no attack "${attack}". Modes: ${record.modes.map((m) => m.name).join(", ")}`);
-  const stats = { ...mode, pellets: record.pellets, magazine: record.magazine, reload: record.reload, ...base_stats };
+  const melee = record.slot === "melee";
+  if (!melee && (stance || combo_multiplier !== undefined)) throw new Error(`${name} is not melee: stance and combo_multiplier only apply to melee weapons.`);
+  const combo = combo_multiplier ?? 1;
+  if (combo < 1 || combo > 12) throw new Error("combo_multiplier must be 1-12.");
+  const stats = {
+    ...mode, pellets: record.pellets, magazine: record.magazine, reload: record.reload,
+    heavyAttack: record.heavyAttack, range: record.range, windUp: record.windUp, ...base_stats,
+  };
 
   const regular = resolveMods(mods, data.weaponMods);
   if (regular.length > 8) throw new Error("A weapon has 8 regular mod slots.");
+  for (const m of regular) if (m.mod.stance) throw new Error(`${m.name} is a stance: pass it as "stance".`);
+  let stanceMod;
+  if (stance) {
+    [stanceMod] = resolveMods([stance], data.weaponMods);
+    if (!stanceMod.mod.stance) throw new Error(`${stanceMod.name} is not a stance mod.`);
+    stanceMod.slot ??= record.stancePolarity; // the weapon's own stance slot, unless told otherwise
+  }
   const exilusMod = exilus ? resolveMods([exilus], data.weaponMods)[0] : undefined;
   const equipped = exilusMod ? [...regular, exilusMod] : regular;
   const sum = (stat) => equipped.reduce((total, m) => total + (m.effects[stat] ?? 0), 0) / 100;
@@ -188,7 +211,9 @@ function weaponBuild({ weapon, mods = [], exilus, attack, catalyst = true, base_
 
   const perPellet = Object.values(byType).reduce((total, v) => total + v, 0);
   const shots = stats.pellets * (1 + sum("multishot"));
-  const critChance = (stats.critChance / 100) * (1 + sum("critChance"));
+  // Blood Rush and Weeping Wounds add their bonus once per combo multiplier above 1x.
+  const comboCrit = sum("comboCritChance") * (combo - 1);
+  const critChance = (stats.critChance / 100) * (1 + sum("critChance") + comboCrit);
   const critDamage = stats.critDamage * (1 + sum("critDamage"));
   const fireBonus = record.type === "Bow" ? sum("fireRateBow") : sum("fireRate");
   const fireRate = stats.fireRate * Math.max(1 + fireBonus, 0.01);
@@ -202,8 +227,24 @@ function weaponBuild({ weapon, mods = [], exilus, attack, catalyst = true, base_
   // Attacks that use no ammo and weapons with no magazine, such as Grimoire, never stop to reload.
   const sustained = firingTime > 0 ? burst * (firingTime / (firingTime + reload)) : burst;
 
-  const capacity = capacityReport(equipped, { reactor: catalyst });
-  for (const m of equipped) {
+  const heavy = () => {
+    // The class's heavy attack multiplier is stored as damage, and the combo multiplies it directly.
+    const heavyMult = stats.heavyAttack / Object.values(stats.damage).reduce((total, v) => total + v, 0);
+    // Killing Blow's bonus only applies here, and adds to the other +damage mods.
+    const heavyBonus = damageMult > 0 ? (damageMult + sum("heavyDamage")) / damageMult : 1;
+    const damage = perPellet * heavyMult * heavyBonus * combo;
+    const heavyCrit = (stats.critChance / 100) * (1 + sum("critChance") + sum("heavyCritChance") + comboCrit);
+    return {
+      damage: round(damage),
+      crit_chance_pct: round(heavyCrit * 100),
+      average_damage_with_crits: round(damage * (1 + heavyCrit * (critDamage - 1))),
+      wind_up_seconds: stats.windUp,
+      ...(record.heavyUnconfirmed && !base_stats?.heavyAttack && { unconfirmed: `The ${record.heavyUnconfirmed}, so treat this as approximate.` }),
+    };
+  };
+
+  const capacity = capacityReport(equipped, { reactor: catalyst, aura: stanceMod });
+  for (const m of stanceMod ? [...equipped, stanceMod] : equipped) {
     const warning = weaponCompatibility(m, name, record);
     if (warning) capacity.warnings.push(warning);
   }
@@ -221,16 +262,29 @@ function weaponBuild({ weapon, mods = [], exilus, attack, catalyst = true, base_
     crit_chance_pct: round(critChance * 100),
     crit_multiplier: round(critDamage),
     average_crit_multiplier: round(avgCrit),
-    status_chance_pct: round(stats.statusChance * (1 + sum("statusChance"))),
-    fire_rate: round(fireRate),
-    magazine,
-    attacks_per_magazine: attacksPerMagazine > 0 ? round(attacksPerMagazine) : null,
-    reload_seconds: round(reload),
-    burst_dps: round(burst),
-    sustained_dps: round(sustained),
+    status_chance_pct: round(stats.statusChance * (1 + sum("statusChance") + sum("comboStatusChance") * (combo - 1))),
+    ...(melee
+      ? {
+        combo_multiplier: combo,
+        attack_speed: round(fireRate),
+        range_m: round(stats.range + sum("meleeRange") * 100),
+        initial_combo: round(sum("initialCombo") * 100),
+        heavy_attack: stats.heavyAttack ? heavy() : null,
+        burst_dps: round(burst),
+      }
+      : {
+        fire_rate: round(fireRate),
+        magazine,
+        attacks_per_magazine: attacksPerMagazine > 0 ? round(attacksPerMagazine) : null,
+        reload_seconds: round(reload),
+        burst_dps: round(burst),
+        sustained_dps: round(sustained),
+      }),
     mod_capacity: capacity,
     not_calculated: notCalculated(equipped),
-    assumptions: "One attack mode only. Before enemy armor, faction damage, status ticks, charge time, arcanes and conditional bonuses.",
+    assumptions: melee
+      ? "One attack mode only, counting attack speed as hits per second: real DPS depends on the stance's hit counts and multipliers. Heavy attacks exclude Bleed, and Glaive-style heavy explosions are not modeled. Before enemy armor, faction damage, status ticks, arcanes and conditional bonuses."
+      : "One attack mode only. Before enemy armor, faction damage, status ticks, charge time, arcanes and conditional bonuses.",
     data: DATA_VERSION,
   };
 }
@@ -258,7 +312,7 @@ function listEntries(table, { query = "", type, limit = 25 }) {
   const q = query.toLowerCase();
   const matches = Object.entries(table)
     .filter(([name]) => name.toLowerCase().includes(q))
-    .filter(([, entry]) => !type || entry.type?.toLowerCase() === type.toLowerCase());
+    .filter(([, entry]) => !type || [entry.type, entry.slot].some((value) => value?.toLowerCase() === type.toLowerCase()));
   return { total: matches.length, results: Object.fromEntries(matches.slice(0, limit)) };
 }
 
@@ -287,21 +341,21 @@ const TOOLS = [
   },
   {
     name: "list_weapons",
-    description: "Find primary and secondary weapons by name or type, with attack modes and stats.",
+    description: "Find primary, secondary and melee weapons by name or type, with attack modes and stats.",
     inputSchema: {
       type: "object",
-      properties: { ...queryProps, type: { type: "string", description: "Rifle, Shotgun, Bow, Sniper, Launcher, Pistol, Dual Pistols or Throwing." } },
+      properties: { ...queryProps, type: { type: "string", description: "Rifle, Shotgun, Bow, Sniper, Launcher, Pistol, Dual Pistols, Throwing, a melee class such as Nikana, or melee for all of them." } },
     },
     run: (args) => listEntries(data.weapons, args),
   },
   {
     name: "search_mods",
-    description: "Search Warframe, primary, shotgun and secondary mods by name, effect (for example strength or multishot) or effect text.",
+    description: "Search Warframe, primary, shotgun, secondary, melee and stance mods by name, effect (for example strength or multishot) or effect text.",
     inputSchema: {
       type: "object",
       properties: {
         query: { type: "string" },
-        category: { type: "string", enum: ["all", "warframe", "aura", "exilus", "primary", "shotgun", "secondary"] },
+        category: { type: "string", enum: ["all", "warframe", "aura", "exilus", "primary", "shotgun", "secondary", "melee", "stance"] },
         limit: { type: "number" },
       },
     },
@@ -326,16 +380,18 @@ const TOOLS = [
   },
   {
     name: "weapon_build",
-    description: "Calculate a primary or secondary weapon build: damage by type, crit, status, burst and sustained DPS, and mod capacity. Melee is not supported.",
+    description: "Calculate a primary, secondary or melee weapon build: damage by type, crit, status, DPS and mod capacity. Melee results also give range and heavy attack damage.",
     inputSchema: {
       type: "object",
       properties: {
         weapon: { type: "string" },
         mods: modList,
         exilus: { description: "Exilus mod name or {name, rank, slot_polarity}." },
+        stance: { description: "Melee only. Stance mod name or {name, rank, slot_polarity}. Adds capacity. Defaults to the weapon's stance polarity." },
+        combo_multiplier: { type: "number", description: "Melee only. Combo multiplier from 1 to 12. Default 1. Scales heavy attacks, Blood Rush and Weeping Wounds." },
         attack: { type: "string", description: "Attack mode from list_weapons, such as Incarnon Form. Defaults to the first." },
         catalyst: { type: "boolean", description: "Orokin Catalyst installed. Default true." },
-        base_stats: { type: "object", description: "Overrides: damage (by type), critChance, critDamage, statusChance, fireRate, pellets, magazine, reload." },
+        base_stats: { type: "object", description: "Overrides: damage (by type), critChance, critDamage, statusChance, fireRate, pellets, magazine, reload, heavyAttack, range, windUp." },
       },
       required: ["weapon"],
     },
@@ -349,7 +405,7 @@ function handle({ method, params }) {
       return {
         protocolVersion: params?.protocolVersion ?? "2025-06-18",
         capabilities: { tools: {} },
-        serverInfo: { name: "warframe-builder", version: "0.2.0" },
+        serverInfo: { name: "warframe-builder", version: "0.3.0" },
       };
     case "ping":
       return {};
