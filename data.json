@@ -36135,7 +36135,7 @@
    "tags": [
     "BAYONET_STANCE"
    ],
-   "stancePolarity": "aura",
+   "stancePolarity": "universal",
    "heavyAttack": 2600,
    "range": 3,
    "windUp": 1,
@@ -37562,6 +37562,7 @@
     "BEAM",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -37589,6 +37590,7 @@
    "tags": [
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -37618,6 +37620,7 @@
    "tags": [
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -37651,6 +37654,7 @@
     "AOE",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Direct Hit",
@@ -37690,6 +37694,7 @@
    "tags": [
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "First Attack",
@@ -37741,6 +37746,7 @@
    "tags": [
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "First Attack",
@@ -37793,6 +37799,7 @@
     "ASSAULT_AMMO",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -37823,6 +37830,7 @@
     "ASSAULT_AMMO",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -37857,6 +37865,7 @@
     "AOE",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -37901,6 +37910,7 @@
     "PROJECTILE",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -37934,6 +37944,7 @@
     "ASSAULT_AMMO",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Projectile Impact",
@@ -37976,6 +37987,7 @@
     "PROJECTILE",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38005,6 +38017,7 @@
    "tags": [
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38036,6 +38049,7 @@
     "PROJECTILE",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38078,6 +38092,7 @@
    "tags": [
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38110,6 +38125,7 @@
    "tags": [
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38141,6 +38157,7 @@
     "ASSAULT_AMMO",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38170,6 +38187,7 @@
     "ASSAULT_AMMO",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38201,6 +38219,7 @@
     "ASSAULT_AMMO",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38231,6 +38250,7 @@
     "SINGLESHOT",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Impact",
@@ -38272,6 +38292,7 @@
     "PROJECTILE",
     "SENTINEL_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38298,6 +38319,7 @@
    "tags": [
     "HOUND_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38325,6 +38347,7 @@
    "tags": [
     "HOUND_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38352,6 +38375,7 @@
    "tags": [
     "HOUND_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38380,6 +38404,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38408,6 +38433,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38435,6 +38461,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38464,6 +38491,7 @@
     "KUBROW_WEAPON",
     "HELMINTH_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38492,6 +38520,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38519,6 +38548,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38547,6 +38577,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38575,6 +38606,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38603,6 +38635,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38630,6 +38663,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38657,6 +38691,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38685,6 +38720,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38712,6 +38748,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38739,6 +38776,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38766,6 +38804,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38793,6 +38832,7 @@
     "BEAST_WEAPON",
     "KAVAT_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",
@@ -38820,6 +38860,7 @@
     "BEAST_WEAPON",
     "KUBROW_WEAPON"
    ],
+   "companionWeapon": true,
    "modes": [
     {
      "name": "Normal Attack",

@@ -462,10 +462,24 @@ test("every attack uses its own pellet count, and explosions count with their im
   assert.equal(call("weapon_build", { weapon: "Kohm", attack: "Single Pellet" }).pellets_or_multishot, 1);
   const ogris = call("weapon_build", { weapon: "Ogris" });
   const blast = call("weapon_build", { weapon: "Ogris", attack: "Rocket Explosion" });
-  assert.equal(ogris.linked_attack.attack, "Rocket Explosion");
-  assert.equal(ogris.burst_dps, round(ogris.linked_attack.burst_dps + (ogris.damage_per_trigger * ogris.average_crit_multiplier * ogris.fire_rate)));
+  assert.equal(ogris.linked_attacks[0].attack, "Rocket Explosion");
+  assert.equal(ogris.burst_dps, round(ogris.linked_attacks[0].burst_dps + (ogris.damage_per_trigger * ogris.average_crit_multiplier * ogris.fire_rate)));
   assert.ok(ogris.burst_dps > blast.burst_dps);
-  assert.equal(call("weapon_build", { weapon: "Soma Prime" }).linked_attack, undefined);
+  assert.equal(call("weapon_build", { weapon: "Soma Prime" }).linked_attacks, undefined);
+  // Several parts of one shot all count.
+  assert.deepEqual(call("weapon_build", { weapon: "Lenz" }).linked_attacks.map((a) => a.attack), ["Initial Blast", "Bubble Collapse"]);
+  assert.equal(call("weapon_build", { weapon: "Proboscis Cernos" }).linked_attacks.length, 2);
+  // Alternatives and weak point bonuses don't.
+  assert.equal(call("weapon_build", { weapon: "Castanas" }).linked_attacks, undefined);
+  assert.equal(call("weapon_build", { weapon: "Vectis Prime", attack: "Incarnon Form" }).linked_attacks, undefined);
+  assert.equal(call("weapon_build", { weapon: "Artemis Bow", attack: "Concentrated Arrow Charged Shot" }).linked_attacks, undefined);
+  assert.ok(call("weapon_build", { weapon: "Staticor" }).linked_attacks.length === 1);
+  // The explosion shares the main attack's reload downtime.
+  const staticor = call("weapon_build", { weapon: "Staticor" });
+  const main = call("weapon_build", { weapon: "Staticor", base_stats: { damage: call("list_weapons", { query: "Staticor" }).results.Staticor.modes[0].damage } });
+  assert.ok(Math.abs(staticor.sustained_dps / staticor.burst_dps - main.sustained_dps / main.burst_dps) < 0.001);
+  // Explosions count towards status totals.
+  assert.ok(call("weapon_build", { weapon: "Kuva Tonkor", mods: ["High Voltage", "Hellfire"] }).status.damage_over_time_dps > 0);
 });
 
 test("elements from outside mods add to the same element on a mod", () => {
@@ -489,6 +503,18 @@ test("Condition Overload's bonus reaches its ticks", () => {
 
 test("arcanes follow slot limits and their weapon restrictions", () => {
   assert.match(call("weapon_build", { weapon: "Soma Prime", arcanes: ["Primary Merciless", "Primary Deadhead"] }).error, /1 arcane slot/);
+  const zaw = { strike: "Balla", grip: "Korb", link: "Jai" };
+  assert.deepEqual(call("weapon_build", { zaw, arcanes: ["Melee Influence", "Exodia Brave"] }).mod_capacity.warnings, []);
+  assert.deepEqual(call("weapon_build", { kitgun: { chamber: "Catchmoon", grip: "Gibber", loader: "Arcroid" }, arcanes: ["Secondary Deadhead", "Pax Bolt"] }).mod_capacity.warnings, []);
+  assert.deepEqual(call("weapon_build", { weapon: "Larkspur", arcanes: ["Primary Merciless"] }).mod_capacity.warnings, []);
+  assert.match(call("weapon_build", { weapon: "Deth Machine Rifle", arcanes: ["Primary Merciless"] }).mod_capacity.warnings.join(), /does not apply/);
+  // Multi-class restrictions, and ones that exclude the weapon.
+  assert.deepEqual(call("weapon_build", { weapon: "Lex Prime", arcanes: ["Arcane Arachne"] }).mod_capacity.warnings, []);
+  const plain = call("weapon_build", { weapon: "Soma Prime" });
+  const momentum = call("weapon_build", { weapon: "Soma Prime", arcanes: ["Arcane Momentum"], conditionals: true });
+  assert.equal(momentum.reload_seconds, plain.reload_seconds);
+  assert.match(momentum.mod_capacity.warnings.join(), /does not apply/);
+  assert.equal(call("weapon_build", { weapon: "Soma Prime", arcanes: ["Eternal Eradicate"], conditionals: true }).burst_dps, plain.burst_dps);
   const burst = (args) => call("weapon_build", { weapon: "Soma Prime", base_stats: GUN, ...args }).burst_dps;
   assert.equal(burst({ arcanes: ["Arcane Fury"], conditionals: true }), burst({}));
   assert.match(call("weapon_build", { weapon: "Soma Prime", arcanes: ["Arcane Fury"] }).mod_capacity.warnings.join(), /does not apply/);
@@ -513,6 +539,7 @@ test("rank 40 capacity and 12 Necramech slots", () => {
   assert.equal(call("weapon_build", { weapon: "Kuva Bramma" }).mod_capacity.capacity, 60);
   assert.equal(call("weapon_build", { weapon: "Kuva Bramma", level: 40 }).mod_capacity.capacity, 80);
   assert.match(call("weapon_build", { weapon: "Soma Prime", level: 40 }).error, /level must be/);
+  assert.match(call("warframe_build", { warframe: "Saryn", level: 1 }).error, /level must be/);
   assert.equal(call("warframe_build", { warframe: "Voidrig", level: 40 }).mod_capacity.capacity, 80);
 });
 
@@ -531,10 +558,16 @@ test("aura effects count on the frame, and suggestions avoid auras that hurt the
   assert.equal(call("warframe_build", { warframe: "Saryn", base_stats: FRAME, aura: "Physique" }).stats.health, 360);
   assert.equal(call("warframe_build", { warframe: "Saryn", aura: "Power Donation" }).abilities.strength, 70);
   assert.notEqual(call("suggest_warframe_build", { warframe: "Protea", goal: "strength" }).aura, "Power Donation");
+  assert.notEqual(call("suggest_warframe_build", { warframe: "Excalibur", goal: "range" }).aura, "Power Donation");
+  assert.equal(call("suggest_warframe_build", { warframe: "Mag", goal: "efficiency", aura: "Power Donation" }).aura, "Power Donation");
+  assert.equal(call("suggest_warframe_build", { warframe: "Jade", goal: "strength", second_aura: "Physique" }).build.mod_capacity.capacity > 78, true);
+  assert.match(call("suggest_warframe_build", { warframe: "Inaros", goal: "shields" }).error, /has no shields/);
+  assert.match(call("suggest_warframe_build", { warframe: "Hildryn", goal: "energy" }).error, /has no energy/);
 });
 
 test("stances and compatibility match the class exactly", () => {
   assert.match(call("weapon_build", { weapon: "Dual Heat Swords", stance: "Crimson Dervish" }).mod_capacity.warnings.join(), /only fits Swords/);
+  assert.equal(call("weapon_build", { weapon: "Vinquibus (Melee)", stance: "Harrowing Spire" }).mod_capacity.capacity, 70);
   assert.deepEqual(call("weapon_build", { weapon: "Grimoire", mods: ["Fass Canticle"] }).mod_capacity.warnings, []);
   assert.deepEqual(call("weapon_build", { weapon: "Soma Prime", mods: ["Mending Shot"] }).mod_capacity.warnings, []);
   assert.match(call("suggest_weapon_build", { weapon: "Veritux", goal: "heavy_attack" }).error, /no heavy attack/);

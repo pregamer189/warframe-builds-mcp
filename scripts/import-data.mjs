@@ -111,7 +111,8 @@ function parseWikiWeapons(lua) {
     weapons[row.Name] = {
       row, magazine: row.Magazine, reload: row.Reload, attacks,
       trigger: row.Trigger, tags: row.CompatibilityTags ?? [],
-      weaponClass: row.Class, stancePolarity: row.StancePolarity?.toLowerCase(),
+      // Vinquibus lists "Aura" for a slot that takes anything, which others call universal.
+      weaponClass: row.Class, stancePolarity: row.StancePolarity?.toLowerCase().replace(/^aura$/, "universal"),
       heavyAttack: row.HeavyAttack, range: row.MeleeRange, windUp: row.WindUp, maxRank: row.MaxRank,
     };
   }
@@ -149,6 +150,7 @@ function weaponFromWiki(entry, slot) {
     trigger: row.Trigger,
     ...(entry.tags.length && { tags: entry.tags }),
     ...(row.Class === "Exalted Weapon" && { exalted: true }),
+    ...(["Robotic", "Hound", "Beast"].includes(row.Slot) && { companionWeapon: true }),
     ...(isMelee && {
       stancePolarity: entry.stancePolarity,
       ...(row.HeavyAttack && { heavyAttack: row.HeavyAttack }),

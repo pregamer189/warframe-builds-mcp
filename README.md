@@ -84,7 +84,7 @@ Formulas come from the Warframe wiki, and the tests check them against the wiki'
 - **Heavy attacks:** they exclude Bleed and wind-up mods. Many multi-hit classes don't match their listed class multiplier in the sources, and those results are marked `unconfirmed`.
 - **Other frames:** companions, Archwings and Necramechs use the stats the sources list, since they publish no rank 30 rule. Necramechs have 12 slots. The tool caps the others at 12 too, as the sources don't confirm their counts, and suggests at most 8 mods for them.
 - **Exalted weapons:** Ability Strength scaling isn't included.
-- **Suggestions:** they assume you own every mod at max rank, so use `exclude` for any you don't. They only choose mods with effects the calculator can model, and they don't choose arcanes. The search is heuristic: against brute force over 16 mods per weapon it matched in 11 of 12 cases and fell 4.3% short in the other, so a better build can exist.
+- **Suggestions:** they assume you own every mod at max rank, so use `exclude` for any you don't. They only choose mods with effects the calculator can model, and they don't choose arcanes. The search is heuristic, so a better build can exist. Against brute force over each weapon's 15 strongest mods it matched in all 16 cases tested, but a wider 17-mod run found one heavy attack build 4.3% better.
 - **Not supported:** Railjack, Necramech melee, vehicles, amps and Operator gear.
 
 ## Game data

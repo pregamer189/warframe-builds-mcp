@@ -250,6 +250,7 @@ const TOOLS = [
         polarities: { ...modNames, description: "The frame's current slot polarities, if you have added Forma. Defaults to its own." },
         forma: { type: "number", description: "Extra Forma you are willing to add. The result lists the polarities to add. Default 0." },
         aura: modSpec("Aura mod"),
+        second_aura: modSpec("Jade only. Second aura mod"),
         exilus: modSpec("Exilus mod"),
         use_exilus: { type: "boolean", description: "Pick an Exilus mod if none is named. Default true." },
         reactor: { type: "boolean", description: "Orokin Reactor installed. Default true." },
