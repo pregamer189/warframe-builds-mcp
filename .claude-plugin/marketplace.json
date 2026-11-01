@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "warframe-builds",
-      "source": { "source": "github", "repo": "pregamer189/warframe-builds-mcp", "ref": "release" },
+      "source": { "source": "url", "url": "https://github.com/pregamer189/warframe-builds-mcp.git", "ref": "release" },
       "description": "Themed Warframe builds from ability and mod synergies, calculators, your saved mods and builds, and live market prices."
     }
   ]
