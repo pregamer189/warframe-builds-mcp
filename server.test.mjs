@@ -234,7 +234,7 @@ test("every weapon and Warframe calculates, and listing is capped", () => {
   const weapons = Object.keys(weaponData);
   assert.ok(weapons.length >= 500);
   for (const [name, build] of sweep("weapon_build", "weapon", weapons)) {
-    const isMelee = weaponData[name].slot === "melee";
+    const isMelee = ["melee", "archmelee", "claws"].includes(weaponData[name].slot); // no ammo, so no sustained DPS
     assert.ok(build.burst_dps > 0 && (isMelee || build.sustained_dps > 0), `${name} has bad DPS`);
     // With no mods, nothing may be lost: every damage type in the data must reach the result.
     const expected = Object.values(weaponData[name].modes[0].damage).reduce((total, v) => total + v, 0);
