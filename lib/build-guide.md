@@ -38,9 +38,9 @@ When `build_guide` returns `first_time: true`, or the player asks to set up:
 
 ## Present each build
 
-- **Idea:** one sentence on how it works, and how to play it.
+- **Idea:** one sentence on how it works, and how to play it. Base play advice on the ability text, and say when it's your inference.
 - **Mods:** the list with polarities and Forma, plus aura, Exilus, arcanes and Archon Shards when they matter.
-- **Calculated:** the numbers from the tool.
+- **Calculated:** the numbers from the tool, including `ability_numbers`. These are listed values at the build's stats, so they don't show how fast it kills. Don't claim a build is strong against an enemy on their strength alone.
 - **Theory:** interactions you inferred from the text, and how to test them in the Simulacrum.
 - **Missing:** mods from the build that the profile lists as missing, and a substitute if there is one.
 

@@ -4,7 +4,7 @@
 
 ## 1. Check what's needed
 
-`node --version` must show 18 or newer, and `git --version` must work. `npx` needs Git to download from GitHub. If either is missing, tell the person and offer to install it.
+`node --version` must show 18 or newer, and `git --version` must work. `npx` needs Git to download from GitHub, and without it fails with `An unknown git error occurred`. If either is missing, tell the person and offer to install it. On a Mac without Git, `git --version` can open Apple's install window instead: tell them to accept it and let it finish.
 
 ## 2. Download and test it
 
