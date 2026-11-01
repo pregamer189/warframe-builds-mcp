@@ -1,7 +1,7 @@
 {
   "name": "warframe-builds-mcp",
-  "version": "1.1.0",
-  "description": "MCP server and Claude skill: a Warframe builder companion with synergy builds, calculators, a saved profile and market prices",
+  "version": "1.2.0",
+  "description": "MCP server: a Warframe builder companion with synergy builds, calculators, a saved profile and market prices",
   "type": "module",
   "bin": { "warframe-builds-mcp": "server.mjs" },
   "files": ["server.mjs", "lib", "data.json", "LICENSE", "NOTICE.md", "INSTALL.md"],

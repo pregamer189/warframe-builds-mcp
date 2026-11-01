@@ -40,7 +40,7 @@ test("completes the MCP handshake and lists tools", () => {
   );
   assert.equal(init.result.protocolVersion, "2025-06-18");
   assert.deepEqual(list.result.tools.map((t) => t.name), [
-    "list_warframes", "list_weapons", "list_enemies", "list_modular_parts", "search_mods", "search_arcanes", "warframe_build", "weapon_build",
+    "build_guide", "list_warframes", "list_weapons", "list_enemies", "list_modular_parts", "search_mods", "search_arcanes", "warframe_build", "weapon_build",
     "suggest_weapon_build", "suggest_warframe_build", "explore_synergies", "get_profile", "update_profile", "save_build", "delete_saved_build",
     "market_price", "sell_advice", "alecaframe_account", "data_info",
   ]);
@@ -988,7 +988,27 @@ test("every package states the same version", () => {
   const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")).version;
   const version = read("./package.json");
   assert.equal(read("./manifest.json"), version);
-  assert.equal(read("./.claude-plugin/plugin.json"), version);
+});
+
+test("the server carries its own guidance, within what apps keep", () => {
+  const [init, list] = session({ method: "initialize", params: { protocolVersion: "2025-06-18" } }, { method: "tools/list" });
+  const limit = 2048; // Claude Code has cut longer text
+  assert.ok(init.result.instructions.length <= limit);
+  assert.match(init.result.instructions, /build_guide/);
+  for (const tool of list.result.tools) assert.ok(tool.description.length <= limit, tool.name);
+  const { guide } = call("build_guide", {});
+  for (const name of ["explore_synergies", "suggest_weapon_build", "warframe_build", "get_profile", "update_profile", "sell_advice"]) {
+    assert.ok(guide.includes(name), name);
+  }
+});
+
+test("the lite skill can be uploaded and says it is the weaker option", () => {
+  const skill = readFileSync(new URL("./skills/warframe-builder-lite/SKILL.md", import.meta.url), "utf8");
+  const [, name, description] = skill.match(/^---\nname: (.+)\ndescription: (.+)\n---\n/);
+  assert.equal(name, "warframe-builder-lite", "must match its folder");
+  assert.ok(description.length <= 1024);
+  assert.match(description, /no game data, calculators, saved profile, live prices or automatic updates/);
+  assert.match(description, /only when the warframe-builds tools are not available/);
 });
 
 test("what the trial builds exposed stays fixed", () => {
