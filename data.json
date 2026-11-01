@@ -76018,5 +76018,1041 @@
   "Two-Handed Nikana": 6,
   "Warfan": 5,
   "Whip": 4.5
+ },
+ "conditionOverload": {
+  "Acceltra": {
+   "Rocket Impact": {
+    "behavior": "adding",
+    "ratio": 0.743
+   }
+  },
+  "Aeolak": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Alt-Fire": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Alternox": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Alternox Prime": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Ambassador": {
+   "Charged AoE": {
+    "behavior": "adding",
+    "ratio": 0.75
+   }
+  },
+  "Arca Plasmor": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Tenet Arca Plasmor": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Basmu": {
+   "Auto": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Battacor": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Braton": {
+   "Incarnon Form AoE": {
+    "behavior": "adding",
+    "ratio": 0.95
+   }
+  },
+  "Mk1-Braton": {
+   "Incarnon Form AoE": {
+    "behavior": "adding",
+    "ratio": 0.95
+   }
+  },
+  "Braton Prime": {
+   "Incarnon Form AoE": {
+    "behavior": "adding",
+    "ratio": 0.95
+   }
+  },
+  "Braton Vandal": {
+   "Incarnon Form AoE": {
+    "behavior": "adding",
+    "ratio": 0.95
+   }
+  },
+  "Bubonico": {
+   "Auto": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Burst": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Burston": {
+   "Incarnon Form Radial Attack": {
+    "behavior": "adding",
+    "ratio": 0.24
+   }
+  },
+  "Burston Prime": {
+   "Incarnon Form Radial Attack": {
+    "behavior": "adding",
+    "ratio": 0.24
+   }
+  },
+  "Buzlok": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Beacon": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Cedo": {
+   "Alt-Fire Glaive": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Cedo Prime": {
+   "Alt-Fire Glaive": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Cernos": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   }
+  },
+  "Cernos Prime": {
+   "Charged Horizontal/Vertical Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   }
+  },
+  "Coda Bassocyst": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Alt-Fire": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Coda Hema": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Rakta Cernos": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   }
+  },
+  "Mutalist Cernos": {
+   "Uncharged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   },
+   "Toxin Cloud": {
+    "behavior": "adding",
+    "ratio": 41
+   }
+  },
+  "Cinta": {
+   "Quick Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Perfect Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Daikyu Prime": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   }
+  },
+  "Drakgoon": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.57
+   }
+  },
+  "Kuva Drakgoon": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   }
+  },
+  "Dread": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   },
+   "Incarnon Form Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Evensong": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.65
+   },
+   "Charged Radial Attack": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Exergis": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Felarx": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Fulmin": {
+   "Semi-Auto Mode": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Harpak": {
+   "Harpoon": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Hema": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Javlok": {
+   "Projectile Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Latron": {
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Latron Prime": {
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Lanka": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.38
+   }
+  },
+  "Miter": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.4
+   },
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Nataruk": {
+   "Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Perfect Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Nunchasa": {
+   "Alt-Fire": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Opticor": {
+   "Charged Shot AoE": {
+    "behavior": "adding",
+    "ratio": 2.5
+   }
+  },
+  "Opticor Vandal": {
+   "Charged Shot AoE": {
+    "behavior": "adding",
+    "ratio": 2
+   }
+  },
+  "Paracyst": {
+   "Infested Harpoon": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Paris": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   },
+   "Incarnon Form Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Paris Prime": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   },
+   "Incarnon Form Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Mk1-Paris": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   }
+  },
+  "Phantasma": {
+   "Cluster Bombs Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Phantasma Prime": {
+   "Cluster Bombs Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Proboscis Cernos": {
+   "Charged Shot Explosion": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Appendages": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Quellor": {
+   "Alt-Fire": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Scourge": {
+   "Spear Throw Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Scourge Prime": {
+   "Spear Throw": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Shedu": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Stahlta": {
+   "Auto": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Alt-Fire": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Steflos": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Tenet Envoy": {
+   "Grenade Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Torid": {
+   "Grenade Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Poison Cloud": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Trumna": {
+   "Auto AoE": {
+    "behavior": "adding",
+    "ratio": 1.64
+   },
+   "Grenade Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Zarr": {
+   "Cannon Mode Cluster Bomb Contact": {
+    "behavior": "adding",
+    "ratio": 1.67
+   }
+  },
+  "Kuva Zarr": {
+   "Cannon Mode Cluster Bomb Contact": {
+    "behavior": "adding",
+    "ratio": 3.33
+   }
+  },
+  "Zhuge Prime": {
+   "Arrow Impact": {
+    "behavior": "adding",
+    "ratio": 1
+   },
+   "Arrow Explosion": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Acrid": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Akarius Prime": {
+   "Rocket Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Rocket Detonation": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Atomos": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Aegrit": {
+   "Direct Hit": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Angstrum": {
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Prisma Angstrum": {
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Balefire Charger": {
+   "Uncharged Shot": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Charged Shot": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Ballistica": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.25
+   }
+  },
+  "Ballistica Prime": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.5
+   },
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Rakta Ballistica": {
+   "Charged Shot": {
+    "behavior": "adding",
+    "ratio": 0.25
+   }
+  },
+  "Bronco Prime": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Castanas": {
+   "Mid-Flight Detonation": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Embedded Detonation": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Sancti Castanas": {
+   "Mid-Flight Detonation": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Embedded Detonation": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Catabolyst": {
+   "Partial Reload Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Reload From Empty Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Cestra": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   },
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Cyanex": {
+   "Projectile Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Burst Mode": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Despair": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Mara Detron": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Tenet Detron": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   },
+   "Burst Shot": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Dual Toxocyst": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Epitaph": {
+   "Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Uncharged Direct Hit": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Furis": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Kompressa Prime": {
+   "Explosion": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Kulstar": {
+   "Cluster Bombs": {
+    "behavior": "adding",
+    "ratio": 2.57
+   }
+  },
+  "Kunai": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   },
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Mk1-Kunai": {
+   "Incarnon Form": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Laetum": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   },
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Lato Vandal": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Lex Prime": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Tenet Plinx": {
+   "Alt-Fire": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Pox": {
+   "Poison Cloud": {
+    "behavior": "adding",
+    "ratio": 2.5
+   }
+  },
+  "Seer": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Kuva Seer": {
+   "Projectile Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Sepulcrum": {
+   "Primary-Fire": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Lock-On Mode": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Sonicor": {
+   "Projectile Impact": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Explosion": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Stug": {
+   "Blob Embed": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Blob Explosion": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Incarnon Form Blob Embed": {
+    "behavior": "none",
+    "ratio": 0
+   },
+   "Incarnon Form Blob Explosion": {
+    "behavior": "none",
+    "ratio": 0
+   }
+  },
+  "Tenet Diplos": {
+   "Lock-on Mode": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Tenet Spirex": {
+   "Slug Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Tysis": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Vasto Prime": {
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Zakti": {
+   "Dart Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Zakti Prime": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Zylok": {
+   "Incarnon Form Radial Attack": {
+    "behavior": "adding",
+    "ratio": 0.9
+   }
+  },
+  "Zylok Prime": {
+   "Incarnon Form Radial Attack": {
+    "behavior": "adding",
+    "ratio": 0.9
+   },
+   "Incarnon Form": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Zymos": {
+   "Homing Spore Contact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Argo & Vel": {
+   "Heavy Attack Glaive": {
+    "behavior": "adding",
+    "ratio": 0.33
+   }
+  },
+  "Corufell": {
+   "Charged Projectile": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Edun": {
+   "Polearm Throw": {
+    "behavior": "adding",
+    "ratio": 0.25
+   }
+  },
+  "Innodem": {
+   "Dagger Projectile": {
+    "behavior": "adding",
+    "ratio": 2
+   }
+  },
+  "Nepheri": {
+   "Fireballs": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Arum Spinosa": {
+   "First Heavy Attack - Toxic Spines": {
+    "behavior": "adding",
+    "ratio": 0.2
+   },
+   "Second Heavy Attack - Toxic Spines": {
+    "behavior": "adding",
+    "ratio": 0.1
+   }
+  },
+  "Quassus Prime": {
+   "First Heavy Attack - Ethereal Daggers": {
+    "behavior": "adding",
+    "ratio": 0.4
+   },
+   "Second Heavy Attack - Ethereal Daggers": {
+    "behavior": "adding",
+    "ratio": 0.2
+   }
+  },
+  "Stropha": {
+   "Ranged Attack": {
+    "behavior": "adding",
+    "ratio": 0.25
+   }
+  },
+  "Syam": {
+   "First Shockwave": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Second Shockwave": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Tenet Grigori": {
+   "Energy Disk": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Verdilac": {
+   "Energy Wave": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Zenistar": {
+   "Disc Impact": {
+    "behavior": "adding",
+    "ratio": 10.4
+   }
+  },
+  "Arbucep": {
+   "1st Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "2nd Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "3rd Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Kuva Ayanga": {
+   "Grenade Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Corvas Prime": {
+   "Uncharged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Fluctus": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Grattler": {
+   "Projectile Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Larkspur Prime": {
+   "Alt-Fire Projectile Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Mandonel": {
+   "Horizontal Spread": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Charge": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Mausolon": {
+   "Auto Radial Attack": {
+    "behavior": "adding",
+    "ratio": 2.5
+   },
+   "Charged Shot Explosion": {
+    "behavior": "adding",
+    "ratio": 0.33
+   }
+  },
+  "Velocitus": {
+   "Uncharged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   },
+   "Charged Shot": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Noctua": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 0.8
+   }
+  },
+  "Burst Laser": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Prisma Burst Laser": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Burst Laser Prime": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Cryotra": {
+   "Direct Hit": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Helstrum": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Prime Laser Rifle": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Laser Rifle": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Multron": {
+   "Projectile Impact": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Stinger": {
+   "Normal Attack": {
+    "behavior": "adding",
+    "ratio": 1
+   }
+  },
+  "Vulklok": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  }
  }
 }

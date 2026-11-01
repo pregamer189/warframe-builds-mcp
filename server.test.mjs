@@ -58,6 +58,25 @@ test("warframe_build lists ability values at the build's stats", () => {
   assert.equal(call("warframe_build", { warframe: "Saryn Prime", extra_effects: { duration: -200 } }).abilities.duration, 12.5);
 });
 
+test("Condition Overload bonuses follow each attack's measured behaviour", () => {
+  const damage = (weapon, attack, mods) => call("weapon_build", { weapon, attack, mods, conditionals: true, status_types_on_target: 1, catalyst: false }).damage_per_shot;
+  const bonus = 0.8; // Galvanized Savvy and Aptitude at full stacks, with one status on the target.
+  const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 0.01, `${actual} vs ${expected}`);
+  // The wiki's two formulas: (1 + damage) x (1 + bonus) when multiplying, and (1 + damage + bonus x share) when adding.
+  const multiplying = "Arca Plasmor";
+  close(damage(multiplying, "Normal Attack", ["Point Blank", "Galvanized Savvy"]) / damage(multiplying, "Normal Attack", ["Point Blank"]), 1 + bonus);
+  close(damage("Braton", "Normal Attack", ["Serration", "Galvanized Aptitude"]) / damage("Braton", "Normal Attack", ["Serration"]), (2.65 + bonus) / 2.65);
+  // Its cloud reads 41 times its real damage.
+  close(damage("Mutalist Cernos", "Toxin Cloud", ["Galvanized Aptitude"]) / damage("Mutalist Cernos", "Toxin Cloud", []), 1 + bonus * 41);
+  const build = call("weapon_build", { weapon: multiplying, mods: ["Galvanized Savvy"] });
+  assert.equal(build.condition_overload.behavior, "multiplying");
+  assert.match(build.condition_overload.note, /unintended/);
+  // Radial damage isn't helped, unless it was measured otherwise.
+  const blast = call("weapon_build", { weapon: "Ogris", attack: "Rocket Explosion", mods: ["Galvanized Aptitude"], conditionals: true, status_types_on_target: 3 });
+  assert.equal(blast.condition_overload.share_of_listed_bonus_pct, 0);
+  assert.equal(call("weapon_build", { weapon: "Braton" }).condition_overload, undefined);
+});
+
 test("special rules keep their source and what later checks found", () => {
   const { rules, checked_through: checked } = JSON.parse(readFileSync(new URL("./lib/special-rules.json", import.meta.url), "utf8"));
   assert.ok(rules.length > 100);
