@@ -9,10 +9,15 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         node: [18, 20, 22]
+        include:
+          - { os: macos-latest, node: 22 }
+          - { os: windows-latest, node: 22 }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,9 +25,33 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm test
 
+  # Runs both install routes the way people use them, on each system people use.
+  install:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install this commit with npx
+        run: npx -y "github:${GITHUB_REPOSITORY}#${GITHUB_SHA}" --version | grep -F "$(node -p "require('./package.json').version")"
+      - name: Pack the installable file and start the server from it
+        run: |
+          npx -y @anthropic-ai/mcpb@2.1.2 validate manifest.json
+          npx -y @anthropic-ai/mcpb@2.1.2 pack . "$RUNNER_TEMP/warframe-builds.mcpb"
+          npx -y @anthropic-ai/mcpb@2.1.2 unpack "$RUNNER_TEMP/warframe-builds.mcpb" "$RUNNER_TEMP/unpacked"
+          node scripts/check-server.mjs "$RUNNER_TEMP/unpacked/server.mjs"
+
   # Installs follow the release branch, so only code that passed every test reaches people's computers.
   release:
-    needs: test
+    needs: [test, install]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

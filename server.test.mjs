@@ -48,6 +48,28 @@ test("completes the MCP handshake and lists tools", () => {
   assert.deepEqual(writers, ["update_profile", "save_build", "delete_saved_build"]);
 });
 
+test("warframe_build lists ability values at the build's stats", () => {
+  const { ability_numbers: abilities, ability_numbers_note: note } = call("warframe_build", { warframe: "Saryn Prime", mods: ["Intensify", "Streamline"] });
+  const spores = abilities.find((a) => a.ability === "Spores");
+  assert.equal(spores.energy_cost, 25 * 0.7);
+  assert.equal(spores.strength.find((n) => n.label === "initial damage").at_build, "13");
+  assert.equal(spores.duration.find((n) => n.listed.includes("decay")).at_build, undefined);
+  assert.match(note, /not damage to an enemy/);
+  assert.equal(call("warframe_build", { warframe: "Saryn Prime", extra_effects: { duration: -200 } }).abilities.duration, 12.5);
+});
+
+test("the lite skill and installable file are valid", () => {
+  const skill = readFileSync(new URL("./skills/warframe-builder-lite/SKILL.md", import.meta.url), "utf8");
+  const [, frontmatter] = skill.match(/^---\n([\s\S]+?)\n---\n/);
+  const field = (name) => frontmatter.match(new RegExp(`^${name}: (.+)$`, "m"))[1];
+  assert.equal(field("name"), "warframe-builder-lite");
+  assert.ok(field("description").length <= 1024);
+  assert.doesNotMatch(field("description"), /[<>]/);
+  const read = (file) => JSON.parse(readFileSync(new URL(file, import.meta.url), "utf8"));
+  assert.equal(read("./manifest.json").version, read("./package.json").version);
+  assert.equal(read("./manifest.json").server.entry_point, "server.mjs");
+});
+
 test("warframe_build applies mods to rank 30 stats", () => {
   const build = call("warframe_build", {
     warframe: "Saryn", base_stats: FRAME, mods: ["Vitality", "Blind Rage", "Streamline"],
@@ -244,6 +266,11 @@ test("every weapon and Warframe calculates, and listing is capped", () => {
   const frames = Object.keys(call("list_warframes", { limit: 1000 }).results);
   assert.ok(frames.length >= 100);
   for (const [name, build] of sweep("warframe_build", "warframe", frames)) {
+    for (const ability of build.ability_numbers ?? []) {
+      for (const number of [...ability.strength, ...ability.duration, ...ability.range]) {
+        assert.ok(!number.at_build?.startsWith("NaN"), `${name} ${ability.ability}: ${number.listed}`);
+      }
+    }
     // Energy can be 0: Hildryn has no energy pool.
     assert.ok(build.stats.health > 0 && build.stats.energy >= 0, `${name} has bad stats`);
   }
