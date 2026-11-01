@@ -1,29 +1,30 @@
 # Install instructions
 
-These are written so an AI assistant can follow them for you, and you can follow them yourself. The desktop extension needs nothing else. The command route needs Node 18 or newer and Git.
+**If you are an assistant:** do the steps below in order and tell the person what you changed. Ask before installing anything or changing a config file. Don't ask for passwords, and never read or send anything from the person's Warframe install. If you can't run commands, as in normal chat, you can't install this: tell the person to paste the same request into Claude Code or the Code tab in Claude Desktop, or to use [the other way](#without-claude-code).
 
-**If you are an assistant:** work out which app you are running in, use its section, and tell the person what you changed. Ask before installing Node. Don't ask for any passwords, and never read or send anything from the person's Warframe install.
+## 1. Check what's needed
 
-## Claude Desktop
+`node --version` must show 18 or newer, and `git --version` must work. If either is missing, tell the person and offer to install it.
 
-An assistant in chat can't install this. Tell the person to:
+## 2. Download and test it
 
-1. Download [warframe-builds.mcpb](https://github.com/pregamer189/warframe-builds-mcp/releases/latest/download/warframe-builds.mcpb).
-2. Double-click it, or drag it onto **Settings > Extensions** in Claude Desktop, then select **Install**.
+```bash
+npx -y github:pregamer189/warframe-builds-mcp#release --version
+```
 
-Node comes with Claude Desktop. New game data arrives by itself. For new features, download the file again; the assistant says when a newer version exists.
+This should print a version number. It can take a minute the first time.
 
-## Claude Code, Cursor, Windsurf and other MCP apps
+## 3. Add it to the app
 
-Check that `node --version` and `git --version` both work first. `npx` fails with a Git error if Git is missing.
-
-Claude Code:
+**Claude Code:** run `claude mcp get warframe-builds`. If it already exists, leave it as it is and tell the person. Otherwise:
 
 ```bash
 claude mcp add --scope user warframe-builds -- npx -y github:pregamer189/warframe-builds-mcp#release
 ```
 
-Other apps: add this to the app's MCP config file, then restart the app.
+Then check that `claude mcp list` shows it connected.
+
+**Other apps:** add this to the app's MCP config file.
 
 ```json
 {
@@ -38,11 +39,31 @@ Other apps: add this to the app's MCP config file, then restart the app.
 
 On Windows, if the app can't start `npx`, use `"command": "cmd"` and `"args": ["/c", "npx", "-y", "github:pregamer189/warframe-builds-mcp#release"]`.
 
-This route updates itself when the app restarts while online.
+## 4. Offer it in normal Claude Desktop chats
 
-## Check that it worked
+Claude Code and normal Claude Desktop chats have separate settings. If `claude_desktop_config.json` exists, ask whether the person wants the builder in normal chats too. It's in `~/Library/Application Support/Claude/` on Mac and `%APPDATA%\Claude\` on Windows.
 
-Ask: "Use warframe-builds to show `data_info`." It should answer with the server version and game data date.
+If they say yes, make a backup copy of the file. Then add this under `mcpServers`, and keep everything else in the file exactly as it is. Claude Desktop doesn't load the shell's PATH, so on Mac use the full path from `which npx`, and put the folders from `which node` and `which git` in `PATH`. Windows can use the `cmd` form above without `env`.
+
+```json
+"warframe-builds": {
+  "command": "/full/path/to/npx",
+  "args": ["-y", "github:pregamer189/warframe-builds-mcp#release"],
+  "env": { "PATH": "/folder/with/node:/folder/with/git:/usr/bin:/bin" }
+}
+```
+
+Tell them to quit and reopen Claude Desktop, and to restore the backup if it reports a problem with the file.
+
+## 5. Finish
+
+Tell the person it's installed, and that the tools only appear in a new conversation. Give them this to say there: **"Set up my Warframe builder"**. The builder then asks about their playstyle and mods. Don't try to do this yourself in the current conversation.
+
+It updates itself when the app restarts while online.
+
+## Without Claude Code
+
+If you only use Claude Desktop and can't use Claude Code, download [warframe-builds.mcpb](https://github.com/pregamer189/warframe-builds-mcp/releases/latest/download/warframe-builds.mcpb) and double-click it, then select **Install**. You don't need Node or Git. New game data arrives by itself, but for new features you have to download the file again. The assistant tells you when there's a newer version.
 
 ## The lite skill
 
@@ -54,7 +75,7 @@ Only for places that can't run the server, such as claude.ai on the web. **It's 
 
 ## Optional: AlecaFrame
 
-AlecaFrame adds currencies, trades and relics. In its **Stats** tab, create a public link with the data to share and generate a token. Put it in the desktop extension's settings, or set `ALECAFRAME_PUBLIC_TOKEN` in the app's MCP config. Telling Claude also works, but the token then appears in that conversation.
+AlecaFrame adds currencies, trades and relics. In its **Stats** tab, create a public link with the data to share and generate a token. Set `ALECAFRAME_PUBLIC_TOKEN` in the app's MCP config, or in the settings of the file from [Without Claude Code](#without-claude-code). Telling Claude also works, but the token then appears in that conversation.
 
 ## Remove it
 

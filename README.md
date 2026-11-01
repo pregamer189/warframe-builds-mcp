@@ -4,15 +4,15 @@ A Warframe builder companion for Claude and other AI assistants. Ask for "a spor
 
 ## Install
 
-**Claude Desktop:** download [warframe-builds.mcpb](https://github.com/pregamer189/warframe-builds-mcp/releases/latest/download/warframe-builds.mcpb) and double-click it. You don't need to install Node.
-
-**Claude Code, Cursor and other assistants that can run commands:** paste this in.
+Paste this into [Claude Code](https://claude.com/product/claude-code), or the Code tab in Claude Desktop. Other assistants that can run commands, such as Cursor, work too.
 
 ```text
-Install the Warframe Builds MCP server for me by following https://github.com/pregamer189/warframe-builds-mcp/blob/main/INSTALL.md
+Install and set up the Warframe builder for me by following https://raw.githubusercontent.com/pregamer189/warframe-builds-mcp/main/INSTALL.md
 ```
 
-Both give you the same server, with the same tools and guidance.
+It checks what you need, installs the server and offers to add it to your normal Claude Desktop chats as well. Then start a new conversation and say "Set up my Warframe builder". Normal chat can't run commands, so it can't do the install itself. If you can't use Claude Code, [INSTALL.md](INSTALL.md#without-claude-code) has another way.
+
+It updates itself when your app restarts.
 
 ### On claude.ai or your phone
 
@@ -31,7 +31,7 @@ The server runs on your computer, so it can't run there. [A lite skill](INSTALL.
 
 | Tool | What it does |
 | --- | --- |
-| `build_guide` | Tells the assistant how to use the rest. It calls this first |
+| `build_guide` | Tells the assistant how to use the rest, and offers setup the first time. It calls this first |
 | `explore_synergies` | Gathers ability text, augments and matching mods and arcanes for a theme |
 | `suggest_weapon_build` | Picks the mods that do the most damage to the enemy you name, within capacity, polarities and conflicts. It can also plan Forma |
 | `suggest_warframe_build` | Picks mods towards a goal such as strength or effective health, or minimums such as 175% efficiency |
@@ -112,7 +112,7 @@ npm run import-data
 
 ## Development
 
-Installs follow the `release` branch, which CI moves forward only after every test passes on `main`. A new version in `package.json` and `manifest.json` also publishes the desktop extension and the lite skill.
+Installs follow the `release` branch, which CI moves forward only after every test passes on `main`. A new version in `package.json` and `manifest.json` also publishes the installable file for people without Claude Code, and the lite skill.
 
 ```bash
 npm test
@@ -123,7 +123,7 @@ npm test
 | `server.mjs` | MCP protocol, tool definitions and input checks |
 | `lib/` | Calculations: `weapons`, `frames`, `target` (enemies), `mods` (capacity and effects), `suggest`, plus `synergy`, `profile`, `market`, `alecaframe` and `update` |
 | `lib/build-guide.md` | The guidance `build_guide` returns. Change how builds are made here |
-| `manifest.json` | Desktop extension packaging |
+| `manifest.json` | Packaging for the installable file |
 | `skills/` | The lite skill, for places that can't run the server |
 | `scripts/` | The data import, and a parser for the wiki's Lua tables |
 

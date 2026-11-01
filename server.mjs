@@ -6,7 +6,7 @@ import { DATA_VERSION, HOME, data, normalize, round } from "./lib/data.mjs";
 import { alecaframeAccount } from "./lib/alecaframe.mjs";
 import { warframeBuild } from "./lib/frames.mjs";
 import { marketPrice, sellAdvice } from "./lib/market.mjs";
-import { deleteBuild, getProfile, loadProfile, saveBuild, suggestionLimits, updateProfile } from "./lib/profile.mjs";
+import { deleteBuild, firstTime, getProfile, loadProfile, saveBuild, suggestionLimits, updateProfile } from "./lib/profile.mjs";
 import { suggestWarframeBuild, suggestWeaponBuild } from "./lib/suggest.mjs";
 import { exploreSynergies } from "./lib/synergy.mjs";
 import { armorAtLevel } from "./lib/target.mjs";
@@ -15,6 +15,11 @@ import { weaponBuild } from "./lib/weapons.mjs";
 
 const SUPPORTED_PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
+
+if (process.argv.includes("--version")) {
+  console.log(version);
+  process.exit(0);
+}
 
 const BUILD_GUIDE = readFileSync(new URL("./lib/build-guide.md", import.meta.url), "utf8");
 
@@ -183,7 +188,7 @@ const TOOLS = [
     name: "build_guide",
     description: "Call this once, before anything else, whenever someone asks about Warframe builds, mods, enemies or what to sell. It returns how to pick the right tools, reason from synergies, and present builds.",
     inputSchema: { type: "object", properties: {} },
-    run: () => ({ guide: BUILD_GUIDE, ...updateNotice() }),
+    run: () => ({ guide: BUILD_GUIDE, first_time: firstTime(), ...updateNotice() }),
   },
   {
     name: "list_warframes",

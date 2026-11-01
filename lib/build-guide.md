@@ -2,6 +2,15 @@
 
 Nothing here is tested in-game, so be clear about what is calculated and what is theory.
 
+## First time
+
+When `build_guide` returns `first_time: true`, or the player asks to set up:
+
+1. If they asked for a build, do that first and do this afterwards. Otherwise say in two or three lines what you can do: themed builds, the most damage against a named enemy, builds around their mods, and what to sell.
+2. Ask once, all optional: how they like to play and what they want to work towards, any mods they know they lack, and any Rivens they want used.
+3. Save their answers with `update_profile`, using `notes` for playstyle and goals. If they skip all of it, call `update_profile` with no changes, so this isn't offered again.
+4. Mention that AlecaFrame can be connected for currencies, trades and relics, but that it's optional and can't see which mods they own.
+
 ## Start
 
 1. Call `get_profile` once per conversation. Respect the player's notes. A saved Riven for the weapon goes in the `riven` argument.
