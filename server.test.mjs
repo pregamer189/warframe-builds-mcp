@@ -1002,6 +1002,30 @@ test("the server carries its own guidance, within what apps keep", () => {
   }
 });
 
+test("setup is offered until the player has a profile", () => {
+  const fresh = mkdtempSync(join(tmpdir(), "warframe-builds-fresh-"));
+  const env = { ...process.env, WARFRAME_BUILDS_HOME: fresh };
+  const run = (name) => {
+    const input = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: {} } }) + "\n";
+    return JSON.parse(JSON.parse(spawnSync(process.execPath, [server], { input, encoding: "utf8", env }).stdout).result.content[0].text);
+  };
+  try {
+    assert.equal(run("build_guide").first_time, true);
+    assert.equal(run("get_profile").mods_mode, "assume_all");
+    assert.equal(run("build_guide").first_time, true, "reading the profile doesn't count");
+    run("update_profile");
+    assert.equal(run("build_guide").first_time, false);
+  } finally {
+    rmSync(fresh, { recursive: true, force: true });
+  }
+});
+
+test("--version prints the version and exits, so an install can be checked", () => {
+  const { status, stdout } = spawnSync(process.execPath, [server, "--version"], { encoding: "utf8" });
+  assert.equal(status, 0);
+  assert.equal(stdout.trim(), JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")).version);
+});
+
 test("the lite skill can be uploaded and says it is the weaker option", () => {
   const skill = readFileSync(new URL("./skills/warframe-builder-lite/SKILL.md", import.meta.url), "utf8");
   const [, name, description] = skill.match(/^---\nname: (.+)\ndescription: (.+)\n---\n/);
