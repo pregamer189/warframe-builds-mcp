@@ -44995,8 +44995,16 @@
    "effects": {
     "strength": 30
    },
-   "other": [
-    "Restoring health with abilities grants +30% Ability Strength for 10s."
+   "conditional": [
+    {
+     "trigger": "Restoring health with abilities",
+     "effects": {
+      "strength": 30
+     },
+     "seconds": 10,
+     "stacks": 1,
+     "text": "Restoring health with abilities grants +30% Ability Strength for 10s."
+    }
    ],
    "incompatible": [
     "Intensify",
@@ -47148,8 +47156,16 @@
    "baseDrain": 2,
    "maxRank": 5,
    "effects": {},
-   "other": [
-    "On Status Effect with Weapon: Squad increases personal Ability Strength by 25% for 6s."
+   "conditional": [
+    {
+     "trigger": "On Status Effect with Weapon",
+     "effects": {
+      "strength": 25
+     },
+     "seconds": 6,
+     "stacks": 1,
+     "text": "On Status Effect with Weapon: Squad increases personal Ability Strength by 25% for 6s."
+    }
    ],
    "aura": true
   },
@@ -54415,8 +54431,16 @@
    "baseDrain": 6,
    "maxRank": 5,
    "effects": {},
-   "other": [
-    "+60% Critical Chance and Damage when Aiming"
+   "conditional": [
+    {
+     "trigger": "When Aiming",
+     "effects": {
+      "critChance": 60,
+      "critDamage": 60
+     },
+     "stacks": 1,
+     "text": "+60% Critical Chance and Damage when Aiming"
+    }
    ]
   },
   "Critical Meltdown": {
@@ -55887,8 +55911,25 @@
    "baseDrain": 2,
    "maxRank": 10,
    "effects": {},
-   "other": [
-    "On Weak Point Hit: +120% Critical Chance when Aiming for 12s On Weak Point Kill: +40% Critical Chance when Aiming for 12s. Stacks up to 5x."
+   "conditional": [
+    {
+     "trigger": "On Weak Point Hit",
+     "effects": {
+      "critChance": 120
+     },
+     "seconds": 12,
+     "stacks": 1,
+     "text": "On Weak Point Hit: +120% Critical Chance when Aiming for 12s"
+    },
+    {
+     "trigger": "On Weak Point Kill",
+     "effects": {
+      "critChance": 40
+     },
+     "seconds": 12,
+     "stacks": 5,
+     "text": "On Weak Point Kill: +40% Critical Chance when Aiming for 12s. Stacks up to 5x."
+    }
    ],
    "blockedTags": [
     "POWER_WEAPON"
@@ -56026,8 +56067,25 @@
    "baseDrain": 2,
    "maxRank": 10,
    "effects": {},
-   "other": [
-    "On Weak Point Hit: +120% Critical Chance when Aiming for 12s On Weak Point Kill: +40% Critical Chance when Aiming for 12s. Stacks up to 5x."
+   "conditional": [
+    {
+     "trigger": "On Weak Point Hit",
+     "effects": {
+      "critChance": 120
+     },
+     "seconds": 12,
+     "stacks": 1,
+     "text": "On Weak Point Hit: +120% Critical Chance when Aiming for 12s"
+    },
+    {
+     "trigger": "On Weak Point Kill",
+     "effects": {
+      "critChance": 40
+     },
+     "seconds": 12,
+     "stacks": 5,
+     "text": "On Weak Point Kill: +40% Critical Chance when Aiming for 12s. Stacks up to 5x."
+    }
    ],
    "blockedTags": [
     "POWER_WEAPON"
@@ -57214,8 +57272,17 @@
    "maxRank": 3,
    "effects": {},
    "other": [
-    "+60% Damage when Aiming",
     "+1 'Purity'"
+   ],
+   "conditional": [
+    {
+     "trigger": "When Aiming",
+     "effects": {
+      "damage": 60
+     },
+     "stacks": 1,
+     "text": "+60% Damage when Aiming"
+    }
    ]
   },
   "Lasting Sting": {
@@ -57709,8 +57776,15 @@
    "baseDrain": 6,
    "maxRank": 5,
    "effects": {},
-   "other": [
-    "+120% Status Chance when Aiming"
+   "conditional": [
+    {
+     "trigger": "When Aiming",
+     "effects": {
+      "statusChance": 120
+     },
+     "stacks": 1,
+     "text": "+120% Status Chance when Aiming"
+    }
    ]
   },
   "Martial Fury": {
@@ -63681,6 +63755,18 @@
    "maxRank": 5,
    "text": [
     "On Electricity Status Effect: +1.5% Reload Speed and +3% Multishot for 12s. Stacks up to 40x."
+   ],
+   "weaponConditional": [
+    {
+     "trigger": "On Electricity Status Effect",
+     "effects": {
+      "reload": 1.5,
+      "multishot": 3
+     },
+     "seconds": 12,
+     "stacks": 40,
+     "text": "On Electricity Status Effect: +1.5% Reload Speed and +3% Multishot for 12s. Stacks up to 40x."
+    }
    ]
   },
   "Emergence Dissipate": {
@@ -64179,6 +64265,18 @@
    "maxRank": 5,
    "text": [
     "On Toxin Status Effect: +3.6% Critical Damage and +1.8% Multishot for 12s. Stacks up to 40x."
+   ],
+   "weaponConditional": [
+    {
+     "trigger": "On Toxin Status Effect",
+     "effects": {
+      "critDamage": 3.6,
+      "multishot": 1.8
+     },
+     "seconds": 12,
+     "stacks": 40,
+     "text": "On Toxin Status Effect: +3.6% Critical Damage and +1.8% Multishot for 12s. Stacks up to 40x."
+    }
    ]
   },
   "Primary Bulwark": {
@@ -64268,6 +64366,18 @@
    "maxRank": 5,
    "text": [
     "On Cold Status Effect: +3% Critical Damage and +2.25% Multishot for 12s. Stacks up to 40x."
+   ],
+   "weaponConditional": [
+    {
+     "trigger": "On Cold Status Effect",
+     "effects": {
+      "critDamage": 3,
+      "multishot": 2.25
+     },
+     "seconds": 12,
+     "stacks": 40,
+     "text": "On Cold Status Effect: +3% Critical Damage and +2.25% Multishot for 12s. Stacks up to 40x."
+    }
    ]
   },
   "Primary Merciless": {
@@ -64492,6 +64602,18 @@
    "maxRank": 5,
    "text": [
     "On shotgun kill within 5m of target: +180% Multishot and +75% Reload Speed for 15s."
+   ],
+   "weaponConditional": [
+    {
+     "trigger": "On shotgun kill within 5m of target",
+     "effects": {
+      "multishot": 180,
+      "reload": 75
+     },
+     "seconds": 15,
+     "stacks": 1,
+     "text": "On shotgun kill within 5m of target: +180% Multishot and +75% Reload Speed for 15s."
+    }
    ]
   },
   "Theorem Contagion": {
@@ -76083,14 +76205,16 @@
    "Incarnon Form AoE": {
     "behavior": "adding",
     "ratio": 0.95,
-    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
+    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot.",
+    "listedDamage": 74
    }
   },
   "Mk1-Braton": {
    "Incarnon Form AoE": {
     "behavior": "adding",
     "ratio": 0.95,
-    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
+    "note": "Listed values for Braton Prime with inactive Daring Reverie. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot.",
+    "listedDamage": 74
    }
   },
   "Braton Prime": {
@@ -76121,14 +76245,16 @@
    "Incarnon Form Radial Attack": {
     "behavior": "adding",
     "ratio": 0.24,
-    "note": "Listed values for Burston Prime. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
+    "note": "Listed values for Burston Prime. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot.",
+    "listedDamage": 55
    }
   },
   "Burston Prime": {
    "Incarnon Form Radial Attack": {
     "behavior": "adding",
     "ratio": 0.24,
-    "note": "Listed values for Burston Prime. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot."
+    "note": "Listed values for Burston Prime. Radial hit only receives CO bonus on target directly hit by bullet. AoE does not scale off multishot.",
+    "listedDamage": 55
    }
   },
   "Buzlok": {
@@ -76909,13 +77035,15 @@
    "Heavy Attack Glaive": {
     "behavior": "adding",
     "ratio": 0.33,
-    "note": "Also does not factor Melee Combo multiplier."
+    "note": "Also does not factor Melee Combo multiplier.",
+    "listedDamage": 600
    }
   },
   "Corufell": {
    "Charged Projectile": {
     "behavior": "multiplying",
-    "ratio": 1
+    "ratio": 1,
+    "listedDamage": 1200
    }
   },
   "Edun": {
@@ -76963,7 +77091,8 @@
   "Stropha": {
    "Ranged Attack": {
     "behavior": "adding",
-    "ratio": 0.25
+    "ratio": 0.25,
+    "listedDamage": 2800
    }
   },
   "Syam": {
@@ -77121,7 +77250,8 @@
    "Normal Attack": {
     "behavior": "multiplying",
     "ratio": 1,
-    "note": "Listed Values for Burst Laser Prime."
+    "note": "Listed Values for Burst Laser Prime.",
+    "listedDamage": 25
    }
   },
   "Prisma Burst Laser": {

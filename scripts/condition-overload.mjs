@@ -63,11 +63,11 @@ function catalogRows(page) {
     const header = parts.find((part) => part.startsWith("!"));
     const columns = header.replace(/^!/, "").split(/!!|\n!/).map(plain);
     const at = (label) => columns.findIndex((column) => column.startsWith(label));
-    const [weapon, attack, ratio, behavior, notes] = [at("Weapon"), at("Attack Name"), at("CO Damage Bonus Relative"), at("Math/Behavior"), at("Notes")];
+    const [weapon, attack, ratio, behavior, notes, damage] = [at("Weapon"), at("Attack Name"), at("CO Damage Bonus Relative"), at("Math/Behavior"), at("Notes"), Math.max(at("Attack Unmodded"), at("Attack Damage"))];
     for (const part of parts) {
       if (!part.startsWith("|")) continue;
       const cells = part.replace(/^\|/, "").split(/\|\||\n\|/).map(plain);
-      if (cells[behavior]) rows.push({ weapons: cells[weapon].split("/").map((name) => name.trim()), attack: cells[attack], ratio: cells[ratio], behavior: cells[behavior], note: notes < 0 ? "" : cells[notes] ?? "" });
+      if (cells[behavior]) rows.push({ weapons: cells[weapon].split("/").map((name) => name.trim()), attack: cells[attack], ratio: cells[ratio], behavior: cells[behavior], note: notes < 0 ? "" : cells[notes] ?? "", damage: damage < 0 ? "" : cells[damage] ?? "" });
     }
   }
   return rows;
@@ -121,7 +121,13 @@ export function importConditionOverload(page, weapons, stances = {}) {
       const exact = modes.find((mode) => sameName(mode) === sameName(row.attack));
       const targets = exact ? [exact] : (ALIASES[`${name}|${row.attack}`] ?? []).filter((mode) => modes.includes(mode));
       if (!targets.length && !NOT_IN_DATA.has(`${name}: ${row.attack}`)) unmapped.push(`${name}: ${row.attack}`);
-      for (const mode of targets) (behaviors[name] ??= {})[mode] = measured;
+      for (const mode of targets) {
+        // Some attacks hit for more than the data lists, such as a heavy attack's projectile, so results can say so.
+        const { damage, pellets = 1 } = weapons[name].modes.find((entry) => entry.name === mode);
+        const ours = Object.values(damage).reduce((sum, value) => sum + value, 0) * pellets;
+        const listed = /\+/.test(row.damage) ? Number.NaN : Number.parseFloat(row.damage);
+        (behaviors[name] ??= {})[mode] = { ...measured, ...(listed > ours * 1.2 && { listedDamage: listed }) };
+      }
     }
   }
   // The catalog's note on the Artemis Bow: the bonus stops working with Concentrated Arrow equipped.

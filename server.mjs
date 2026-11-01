@@ -10,7 +10,7 @@ import { deleteBuild, firstTime, getProfile, loadProfile, saveBuild, suggestionL
 import { suggestWarframeBuild, suggestWeaponBuild } from "./lib/suggest.mjs";
 import { rulesFor, specialRules } from "./lib/special-rules.mjs";
 import { exploreSynergies } from "./lib/synergy.mjs";
-import { armorAtLevel } from "./lib/target.mjs";
+import { armorAtLevel, factionName, poolsAtLevel } from "./lib/target.mjs";
 import { checkForUpdates, latestKnownVersion, newerVersion, stopUpdates } from "./lib/update.mjs";
 import { weaponBuild } from "./lib/weapons.mjs";
 
@@ -84,13 +84,14 @@ function listEnemies({ query = "", faction, level, steel_path = false, limit = 2
   const q = query.toLowerCase();
   const matches = Object.entries(data.enemies)
     .filter(([name]) => nameHas(name, query))
-    .filter(([, enemy]) => !faction || enemy.faction?.toLowerCase().includes(faction.toLowerCase()))
+    .filter(([, enemy]) => !faction || enemy.faction?.toLowerCase().includes(factionName(faction).toLowerCase()))
     .sort(([x], [y]) => Number(y.toLowerCase() === q) - Number(x.toLowerCase() === q));
   return {
     total: matches.length,
     results: Object.fromEntries(matches.slice(0, limit).map(([name, enemy]) => {
       const at = (level ?? enemy.spawnLevel ?? enemy.baseLevel) + (steel_path ? 100 : 0);
-      return [name, { ...enemy, ...((level !== undefined || steel_path) && { level: at, armor_at_level: round(armorAtLevel(enemy.armor, enemy.baseLevel, at)) }) }];
+      const pools = poolsAtLevel(enemy, at, steel_path);
+      return [name, { ...enemy, ...((level !== undefined || steel_path) && { level: at, armor_at_level: round(armorAtLevel(enemy.armor, enemy.baseLevel, at)), health_at_level: round(pools.health), ...(enemy.shields && { shields_at_level: round(pools.shields) }) }) }];
     })),
   };
 }
@@ -170,7 +171,7 @@ const conditionalsProp = { type: "boolean", description: "Count triggered effect
 const extraEffects = { type: "object", description: "Extra percentage bonuses for buffs this tool cannot see, by effect name. Weapons: {damage: 50, critChance: 25}. Frames: {strength: 25, armor: 100}." };
 const targetProp = {
   type: ["string", "object"],
-  description: "The enemy, as a name or faction such as \"Heavy Gunner\" or \"Grineer\", or {enemy, level, steel_path, faction, armor}. An enemy with a level scales its armor. steel_path adds 100 levels to that level, so leave it out if the level you have already includes them. armor_strip is the percentage of armor removed. Applies faction damage multipliers, armor reduction and faction mods. See list_enemies.",
+  description: "The enemy, as a name or faction such as \"Heavy Gunner\" or \"Grineer\", or {enemy, level, steel_path, faction, armor}. An enemy with a level scales its armor, health and shields. steel_path adds 100 levels to that level and multiplies health and shields by 2.5, so if the level you have already includes the 100, ask rather than guess. armor_strip is the percentage of armor removed: the wiki lists Corrosive as 26% for the first stack and 6% more per stack, up to 80% at 10, and Heat as gradually up to 50%. Applies faction damage multipliers, armor reduction and faction mods. See list_enemies.",
 };
 const useProfile = { type: "boolean", description: "Respect the saved profile's missing and owned mods. Default true." };
 const detailProp = { type: "boolean", description: "Return full stats for every result. Lists are short summaries otherwise, except for 3 matches or fewer." };
@@ -212,7 +213,7 @@ const TOOLS = [
   },
   {
     name: "list_enemies",
-    description: "Find enemies by name or faction, with armor, health and base level. Pass level or steel_path to see their armor there.",
+    description: "Find enemies by name or faction, with armor, health and base level. Pass level or steel_path to see their armor, health and shields there.",
     inputSchema: {
       type: "object",
       properties: { ...queryProps, faction: { type: "string" }, level: { type: "number" }, steel_path: { type: "boolean", description: "Adds 100 levels. Default false." } },
