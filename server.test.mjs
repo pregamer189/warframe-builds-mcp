@@ -31,7 +31,7 @@ test("completes the MCP handshake and lists tools", () => {
   );
   assert.equal(init.result.protocolVersion, "2025-06-18");
   assert.deepEqual(list.result.tools.map((t) => t.name), [
-    "list_warframes", "list_weapons", "search_mods", "warframe_build", "weapon_build",
+    "list_warframes", "list_weapons", "search_mods", "warframe_build", "weapon_build", "suggest_weapon_build",
   ]);
 });
 
@@ -313,6 +313,80 @@ test("every stance fits a real melee class", () => {
     const wanted = stance.compat.toLowerCase().replace(/^staves$/, "staff").replace(/s$/, "");
     assert.ok(classes.has(wanted), `${stance.name} fits no class: ${stance.compat}`);
   }
+});
+
+test("Cannonade mods need a semi-auto trigger and fix the fire rate", () => {
+  const warnings = (weapon, mods) => call("weapon_build", { weapon, mods }).mod_capacity.warnings;
+  assert.match(warnings("Soma Prime", ["Semi-Rifle Cannonade"]).join(" "), /Semi-Auto/);
+  assert.deepEqual(warnings("Lex Prime", ["Semi-Pistol Cannonade"]), []);
+  const rate = (mods) => call("weapon_build", { weapon: "Lex Prime", mods }).fire_rate;
+  assert.ok(rate(["Lethal Torrent"]) > rate([]));
+  assert.equal(rate(["Semi-Pistol Cannonade", "Lethal Torrent"]), rate([]));
+});
+
+test("wiki tags block mods from the weapons they exclude", () => {
+  assert.match(call("weapon_build", { weapon: "Zhuge", mods: ["Split Flights"] }).mod_capacity.warnings.join(" "), /cannot be used/);
+});
+
+test("PvP-only mods warn", () => {
+  const { mod_capacity: capacity } = call("weapon_build", { weapon: "Soma Prime", mods: ["Lie In Wait"] });
+  assert.match(capacity.warnings.join(" "), /Conclave/);
+});
+
+test("with no polarities, every mod goes in a blank slot", () => {
+  const { mods, build } = call("suggest_weapon_build", { weapon: "Soma Prime", polarities: [], mods: ["Serration"] });
+  assert.ok(mods.every((m) => m.slot_polarity === "none"));
+  assert.equal(build.mod_capacity.warnings.length, 0);
+});
+
+test("suggestions are legal builds that the calculator agrees with", () => {
+  for (const weapon of ["Soma Prime", "Tigris Prime", "Lex Prime", "Nikana Prime", "Lanka"]) {
+    const { mods, build, stance } = call("suggest_weapon_build", { weapon });
+    assert.ok(mods.length > 0 && mods.length <= 8, weapon);
+    assert.deepEqual(build.mod_capacity.warnings, [], weapon);
+    assert.ok(build.mod_capacity.used <= build.mod_capacity.capacity, weapon);
+    const again = call("weapon_build", { weapon, mods, stance, ...(stance && { combo_multiplier: 12 }) });
+    assert.equal(again.burst_dps, build.burst_dps, weapon);
+    assert.ok(build.burst_dps > call("weapon_build", { weapon }).burst_dps, weapon);
+  }
+});
+
+test("suggestions respect exclude, required mods and capacity", () => {
+  const names = (result) => result.mods.map((m) => m.name);
+  assert.ok(names(call("suggest_weapon_build", { weapon: "Soma Prime" })).includes("Serration"));
+  assert.ok(!names(call("suggest_weapon_build", { weapon: "Soma Prime", exclude: ["Serration"] })).includes("Serration"));
+  assert.ok(names(call("suggest_weapon_build", { weapon: "Soma Prime", mods: ["Hush"] })).includes("Hush"));
+
+  const small = call("suggest_weapon_build", { weapon: "Soma Prime", catalyst: false, polarities: [] });
+  assert.ok(small.build.mod_capacity.used <= 30);
+  assert.match(call("suggest_weapon_build", { weapon: "Soma Prime", mods: ["Serration", "Amalgam Serration"] }).error, /do not fit/);
+});
+
+test("suggestions find builds a one-step search gets stuck below", () => {
+  // Each swaps one costly mod for two cheaper ones, which brute force found and the first search missed.
+  const beats = (weapon, goal, mods) => {
+    const suggested = call("suggest_weapon_build", { weapon, goal }).build[goal];
+    const assigned = mods.map((name) => ({ name, slot_polarity: "none" }));
+    const known = call("weapon_build", { weapon, mods: assigned });
+    assert.deepEqual(known.mod_capacity.warnings, [], weapon);
+    assert.ok(suggested >= known[goal], `${weapon}: ${suggested} < ${known[goal]}`);
+  };
+  beats("Lex Prime", "sustained_dps", ["Semi-Pistol Cannonade", "Primed Convulsion", "Barrel Diffusion", "Primed Target Cracker", "Creeping Bullseye"]);
+  beats("Tigris Prime", "burst_dps", ["Primed Point Blank", "Primed Charged Shell", "Hell's Chamber", "Shotgun Barrage", "Chilling Reload"]);
+});
+
+test("melee suggestions chase the goal and combo", () => {
+  const heavy = call("suggest_weapon_build", { weapon: "Nikana Prime", goal: "heavy_attack" });
+  assert.equal(heavy.goal, "heavy_attack");
+  assert.equal(heavy.build.combo_multiplier, 12);
+  assert.ok(heavy.build.heavy_attack.average_damage_with_crits > call("suggest_weapon_build", { weapon: "Nikana Prime" }).build.heavy_attack.average_damage_with_crits);
+  assert.ok(heavy.stance);
+
+  const dps = call("suggest_weapon_build", { weapon: "Nikana Prime" });
+  assert.ok(dps.mods.some((m) => m.name === "Blood Rush"));
+  assert.match(call("suggest_weapon_build", { weapon: "Nikana Prime", goal: "sustained_dps" }).error, /no magazine/);
+  assert.match(call("suggest_weapon_build", { weapon: "Soma Prime", goal: "heavy_attack" }).error, /not melee/);
+  assert.match(call("suggest_weapon_build", { weapon: "Soma Prime", goal: "nope" }).error, /Unknown goal/);
 });
 
 test("unknown names return a helpful tool error", () => {

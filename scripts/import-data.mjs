@@ -106,6 +106,8 @@ function parseWikiWeapons(lua) {
     const text = (key) => body.match(new RegExp(`^\\t\\t${key} = "([^"]+)"`, "m"))?.[1];
     weapons[name] = {
       magazine: num("Magazine"), reload: num("Reload"), attacks,
+      trigger: text("Trigger"),
+      tags: [...(body.match(/^\t\tCompatibilityTags = \{([^}]*)\}/m)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((tag) => tag[1]),
       weaponClass: text("Class"), stancePolarity: text("StancePolarity")?.toLowerCase(),
       heavyAttack: num("HeavyAttack"), range: num("MeleeRange"), windUp: num("WindUp"),
     };
@@ -115,6 +117,8 @@ function parseWikiWeapons(lua) {
 
 // Reads mod conflicts and descriptions. Its BaseDrain and MaxRank are not used: rendered wiki pages and WFCD
 // agree against them for mods like Hell's Chamber, where the module holds the Flawed version's numbers.
+const tagList = (body, key) => [...(body.match(new RegExp(`^\\t\\t\\t${key} = \\{([^}]*)\\}`, "m"))?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((tag) => tag[1]);
+
 function parseWikiMods(lua) {
   const byId = {};
   const byName = {};
@@ -126,6 +130,8 @@ function parseWikiMods(lua) {
     const entry = {
       incompatible: [...list.matchAll(/"([^"]+)"/g)].map((item) => item[1]).filter((other) => other !== name),
       description: body.match(/^\t\t\tDescription = "([^\n]*)",?$/m)?.[1],
+      requiredTags: tagList(body, "CompatibilityTags"),
+      blockedTags: tagList(body, "IncompatibilityTags"),
     };
     const id = body.match(/^\t\t\tInternalName = "([^"]+)"/m)?.[1];
     if (id) byId[id] = entry;
@@ -189,6 +195,8 @@ function importWeapons(items, wiki) {
       mastery: w.masteryReq ?? 0,
       polarities: w.polarities ?? [],
       exilusPolarity: w.exilusPolarity,
+      trigger: extra?.trigger ?? w.trigger,
+      ...(extra?.tags.length && { tags: extra.tags }),
       ...(melee && {
         stancePolarity: extra?.stancePolarity ?? w.stancePolarity,
         ...heavyAttack(w, extra, attacks),
@@ -254,7 +262,8 @@ function pickVariant(variants, wikiMods) {
   return pool[0];
 }
 
-async function importMods(items, wikiMods) {
+async function importMods(items, wikiMods, weapons) {
+  const weaponTags = new Set(Object.values(weapons).flatMap((w) => w.tags ?? []));
   const groups = new Map();
   for (const m of items) {
     if (!MOD_SLOTS[m.type]) continue;
@@ -310,6 +319,13 @@ async function importMods(items, wikiMods) {
     if (top.other.length) entry.other = top.other;
     if (m.compatName === "AURA") entry.aura = true;
     if (slot === "stance") entry.stance = true;
+    if (/PvP/.test(m.uniqueName)) entry.pvpOnly = true;
+    if (/Fire Rate cannot be modified/.test(wikiMod?.description ?? "")) entry.fireRateLocked = true;
+    // Only tags a real weapon has matter here. SEMI_AUTO goes by each weapon's trigger, as few carry the tag.
+    const required = (wikiMod?.requiredTags ?? []).filter((tag) => tag === "SEMI_AUTO" || weaponTags.has(tag));
+    const blocked = (wikiMod?.blockedTags ?? []).filter((tag) => weaponTags.has(tag));
+    if (required.length && slot !== "stance") entry.requiredTags = required;
+    if (blocked.length) entry.blockedTags = blocked;
     if (m.isExilus || m.isUtility) entry.exilus = true;
     if (unverified) entry.unverified = true;
     if (wikiMod?.incompatible.length) entry.incompatible = wikiMod.incompatible;
@@ -358,7 +374,7 @@ const { frames, counts } = importWarframes(warframes, wiki);
 const wikiWeapons = { ...parseWikiWeapons(wikiPrimary), ...parseWikiWeapons(wikiSecondary), ...parseWikiWeapons(wikiMelee) };
 // WFCD's melee file also holds Zaw parts, which are not weapons on their own. Some real melee weapons are typed Rifle there.
 const weapons = importWeapons([...primary, ...secondary, ...melee.filter((w) => w.type !== "Zaw Component")], wikiWeapons);
-const { warframeMods, weaponMods, nonLinear, flawedOnly } = await importMods(mods, parseWikiMods(wikiModsLua));
+const { warframeMods, weaponMods, nonLinear, flawedOnly } = await importMods(mods, parseWikiMods(wikiModsLua), weapons);
 
 // Values confirmed against the wiki's rendered pages when this script was written.
 check(Object.keys(frames).length >= 100, "too few Warframes");
@@ -381,6 +397,10 @@ check(weapons.Paracesis?.slot === "melee", "Paracesis is typed Rifle by WFCD but
 check(weaponMods["Pressure Point"]?.effects.damage === 120 && weaponMods["Pressure Point"]?.maxRank === 5, "Pressure Point picked the wrong variant");
 check(weaponMods["True Steel"]?.effects.heavyCritChance === 120, "True Steel heavy crit");
 check(weaponMods["Blood Rush"]?.effects.comboCritChance === 40, "Blood Rush combo crit");
+check(weaponMods["Semi-Rifle Cannonade"]?.requiredTags?.includes("SEMI_AUTO") && weaponMods["Semi-Rifle Cannonade"].fireRateLocked, "Cannonade limits");
+check(weaponMods["Split Flights"]?.blockedTags?.includes("CROSSBOW"), "Split Flights blocked tags");
+check(weapons["Lex Prime"]?.trigger === "Semi-Auto" && weapons["Soma Prime"]?.trigger === "Auto-Spool", "weapon triggers");
+check(weaponMods["Lie In Wait"]?.pvpOnly && !weaponMods.Serration?.pvpOnly, "PvP-only mods");
 check(weaponMods["Crimson Dervish"]?.stance && weaponMods["Crimson Dervish"]?.baseDrain === 2, "Crimson Dervish stance");
 
 const data = {

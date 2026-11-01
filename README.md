@@ -11,8 +11,9 @@ An MCP server that calculates Warframe and weapon builds. It runs on Node 18+ wi
 | `search_mods` | Finds mods by name, effect or effect text |
 | `warframe_build` | Final stats, ability stats, armor mitigation and mod capacity |
 | `weapon_build` | Damage by type, crit, status, DPS and mod capacity. Melee results add range and heavy attacks, with `stance` and `combo_multiplier` inputs |
+| `suggest_weapon_build` | Picks the mods that give a weapon the most damage, within capacity, polarities and conflicts |
 
-Build results list any `not_calculated` effects, such as conditional bonuses, and warn about mod conflicts, weapon or Warframe compatibility, and going over capacity.
+Build results list any `not_calculated` effects, such as conditional bonuses, and warn about mod conflicts, weapon or Warframe compatibility, PvP-only mods, and going over capacity.
 
 ## Install
 
@@ -47,6 +48,7 @@ Both sources are community maintained and can lag behind game patches. Neither w
 - Zaws, Exalted weapons, Archwing, Necramech and companion gear are not supported. Vinquibus only has its gun form.
 - Warframe results exclude arcanes, archon shards, set bonuses, passives and overshields. Jade's second aura slot is not modeled.
 - Weapon results cover one attack mode at a time, before enemy armor, faction damage, status ticks, charge time beyond the fire rate, arcanes and conditional bonuses.
+- Suggestions assume you own every mod at max rank, and pick for raw damage rather than armor or faction matchups. They leave out status, conditional bonuses, Rivens, Exilus and arcanes. The search is heuristic, so a better build can exist: checked against brute force over each weapon's 16 strongest mods, it matched in 11 of 12 cases and fell 4.3% short in the other.
 - Spool-up weapons such as Soma Prime and Kohm use their fully spooled values.
 - Incarnon and alternate modes use the weapon's normal pellet count, magazine and reload.
 - Melee DPS counts attack speed as hits per second, so it ignores the stance's hit counts and multipliers. Compare it between builds of one weapon rather than between weapons.

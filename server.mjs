@@ -15,6 +15,7 @@ const PHYSICAL = ["impact", "puncture", "slash"];
 const COMBINED = Object.values(COMPOSITES);
 
 const find = (table, name, kind) => {
+  if (Object.hasOwn(table, name)) return [name, table[name]];
   const key = Object.keys(table).find((k) => k.toLowerCase() === String(name).toLowerCase());
   if (!key) {
     const words = String(name).toLowerCase().split(/\s+/);
@@ -59,6 +60,7 @@ function capacityReport(mods, { reactor, aura }) {
       || m.mod.incompatible?.includes(other.name) || other.mod.incompatible?.includes(m.name));
     if (conflict) warnings.push(`${m.name} conflicts with ${conflict.name}: they cannot be equipped together.`);
     if (m.mod.unverified) warnings.push(`${m.name} values could not be verified and may be the weaker Flawed version.`);
+    if (m.mod.pvpOnly) warnings.push(`${m.name} only works in Conclave (PvP).`);
   });
   const capacity = BASE_CAPACITY * (reactor ? 2 : 1) + (aura ? auraCapacity(aura) : 0);
   const drains = mods.map((m) => ({ mod: m.name, rank: m.rank, drain: slottedDrain(m) }));
@@ -150,6 +152,14 @@ function meleeFits(compat, name, weapon) {
 
 function weaponCompatibility(m, name, weapon) {
   if (m.mod.slot !== weapon.slot && !m.mod.stance) return `${m.name} is a ${m.mod.slot} mod, but ${name} takes ${weapon.slot} mods.`;
+  const tags = weapon.tags ?? [];
+  if (m.mod.blockedTags?.some((tag) => tags.includes(tag))) return `${m.name} cannot be used on ${name}.`;
+  const needs = m.mod.requiredTags;
+  if (needs?.includes("SEMI_AUTO")) {
+    if (!tags.includes("SEMI_AUTO") && !/(^|\/ )Semi/.test(weapon.trigger ?? "")) return `${m.name} only fits Semi-Auto weapons.`;
+  } else if (needs && weapon.tags && !needs.some((tag) => tags.includes(tag))) {
+    return `${m.name} only fits weapons tagged ${needs.join(" or ")}.`;
+  }
   const compat = m.mod.compat;
   if (weapon.slot === "melee") return meleeFits(compat, name, weapon) ? undefined : `${m.name} only fits ${compat}.`;
   if (["PRIMARY", "Rifle", "Shotgun", "Pistol"].includes(compat)) return undefined;
@@ -215,7 +225,9 @@ function weaponBuild({ weapon, mods = [], exilus, stance, combo_multiplier, atta
   const comboCrit = sum("comboCritChance") * (combo - 1);
   const critChance = (stats.critChance / 100) * (1 + sum("critChance") + comboCrit);
   const critDamage = stats.critDamage * (1 + sum("critDamage"));
-  const fireBonus = record.type === "Bow" ? sum("fireRateBow") : sum("fireRate");
+  // Cannonade mods fix the rate of fire.
+  const fireLocked = equipped.some((m) => m.mod.fireRateLocked);
+  const fireBonus = fireLocked ? 0 : record.type === "Bow" ? sum("fireRateBow") : sum("fireRate");
   const fireRate = stats.fireRate * Math.max(1 + fireBonus, 0.01);
   const magazine = Math.round(stats.magazine * (1 + sum("magazine")));
   const reload = stats.reload / Math.max(1 + sum("reload"), 0.01);
@@ -289,6 +301,137 @@ function weaponBuild({ weapon, mods = [], exilus, stance, combo_multiplier, atta
   };
 }
 
+// Stats each goal can gain from. Status, utility and conditional effects never raise these numbers.
+const DAMAGE_EFFECTS = [
+  "damage", "multishot", "critChance", "critDamage", "fireRate", "fireRateBow", "comboCritChance", ...PHYSICAL, ...ELEMENTS, ...COMBINED,
+];
+const GOAL_EFFECTS = {
+  burst_dps: DAMAGE_EFFECTS,
+  sustained_dps: [...DAMAGE_EFFECTS, "magazine", "reload"],
+  heavy_attack: DAMAGE_EFFECTS.filter((e) => e !== "fireRate").concat("heavyCritChance", "heavyDamage"),
+};
+const BEAM_WIDTH = 200;
+const GOAL_SCORES = {
+  burst_dps: (build) => build.burst_dps,
+  sustained_dps: (build) => build.sustained_dps,
+  heavy_attack: (build) => build.heavy_attack?.average_damage_with_crits ?? 0,
+};
+
+// Puts mods in their matching polarity slots, largest drain first. Other mods take the blank slots, then any
+// polarized slots left over, where they cost 25% more.
+function assignSlots(mods, polarities, slots = 8) {
+  const open = [...polarities];
+  const assigned = new Map();
+  const byDrain = [...mods].sort((a, b) => b.drain - a.drain);
+  for (const m of byDrain) {
+    const slot = open.indexOf(m.mod.polarity);
+    if (slot >= 0) assigned.set(m.name, open.splice(slot, 1)[0]);
+  }
+  let blank = slots - polarities.length;
+  for (const m of byDrain) {
+    if (assigned.has(m.name)) continue;
+    assigned.set(m.name, blank-- > 0 ? "none" : open.shift());
+  }
+  return assigned;
+}
+
+function suggestWeaponBuild({
+  weapon, goal, mods: required = [], exclude = [], polarities, stance, combo_multiplier, attack, catalyst = true,
+}) {
+  const [name, record] = find(data.weapons, weapon, "weapon");
+  const melee = record.slot === "melee";
+  const chosenGoal = goal ?? (melee ? "burst_dps" : "sustained_dps");
+  if (!GOAL_SCORES[chosenGoal]) throw new Error(`Unknown goal: ${chosenGoal}. Goals: ${Object.keys(GOAL_SCORES).join(", ")}`);
+  if (melee && chosenGoal === "sustained_dps") throw new Error("Melee weapons have no magazine: use burst_dps or heavy_attack.");
+  if (!melee && chosenGoal === "heavy_attack") throw new Error(`${name} is not melee: use burst_dps or sustained_dps.`);
+
+  // Melee builds assume a held combo, since Blood Rush and heavy attacks are built around one.
+  const combo = melee ? combo_multiplier ?? 12 : undefined;
+  // A stance's moves change real damage, so it is only chosen for capacity here unless one is named.
+  const chosenStance = !melee ? undefined : stance ?? Object.entries(data.weaponMods)
+    .filter(([, mod]) => mod.stance && !mod.pvpOnly && meleeFits(mod.compat, name, record))
+    .sort(([, a], [, b]) => Number(b.polarity === record.stancePolarity) - Number(a.polarity === record.stancePolarity))[0]?.[0];
+  const slotPolarities = polarities ?? record.polarities;
+  const resolve = (names) => resolveMods(names, data.weaponMods);
+  const buildOf = (names) => {
+    const assigned = assignSlots(resolve(names), slotPolarities);
+    return weaponBuild({
+      weapon: name, attack, catalyst, stance: chosenStance, combo_multiplier: combo,
+      mods: names.map((mod) => ({ name: mod, slot_polarity: assigned.get(resolve([mod])[0].name) })),
+    });
+  };
+  const score = GOAL_SCORES[chosenGoal];
+  const fits = (build) => build.mod_capacity.warnings.length === 0;
+
+  const requiredNames = resolve(required).map((m) => m.name);
+  const excluded = new Set(resolve(exclude).map((m) => m.name));
+  const candidates = Object.entries(data.weaponMods)
+    .filter(([modName, mod]) => !mod.pvpOnly && !mod.stance && !mod.unverified && !excluded.has(modName) && !requiredNames.includes(modName))
+    .filter(([, mod]) => Object.keys(mod.effects).some((effect) => GOAL_EFFECTS[chosenGoal].includes(effect)))
+    .filter(([modName, mod]) => !weaponCompatibility({ name: modName, mod }, name, record))
+    // On a tie, the first wins: a mod with no side effects, then the cheaper one, so Serration beats Heavy Caliber.
+    .sort(([, a], [, b]) => (a.other?.length ?? 0) - (b.other?.length ?? 0) || a.baseDrain + a.maxRank - b.baseDrain - b.maxRank)
+    .map(([modName]) => modName);
+
+  const start = buildOf(requiredNames);
+  if (!fits(start)) throw new Error(`The required mods do not fit: ${start.mod_capacity.warnings.join(" ")}`);
+  const stateOf = (names) => {
+    const build = buildOf(names);
+    return fits(build) ? { names, value: score(build), used: build.mod_capacity.used } : undefined;
+  };
+
+  // Beam search: each round extends the best builds by one mod. Half the beam is ranked by damage and half by damage
+  // per capacity, or one costly mod crowds out the two cheap ones that would beat it.
+  let best = { names: requiredNames, value: score(start) };
+  let beam = [best];
+  for (let size = requiredNames.length; size < 8 && beam.length; size++) {
+    const seen = new Map();
+    for (const state of beam) {
+      for (const mod of candidates) {
+        if (state.names.includes(mod)) continue;
+        const names = [...state.names, mod];
+        const key = [...names].sort().join("|");
+        if (seen.has(key)) continue;
+        const next = stateOf(names);
+        if (next) seen.set(key, next);
+      }
+    }
+    const states = [...seen.values()];
+    const top = (rank) => [...states].sort((a, b) => rank(b) - rank(a)).slice(0, BEAM_WIDTH / 2);
+    beam = [...new Set([...top((x) => x.value), ...top((x) => x.value / Math.max(x.used, 1))])];
+    for (const state of beam) if (state.value > best.value) best = state;
+  }
+
+  // Then single swaps until nothing improves.
+  for (let improved = true; improved;) {
+    improved = false;
+    for (const [i, old] of best.names.entries()) {
+      if (requiredNames.includes(old)) continue;
+      for (const mod of candidates) {
+        if (best.names.includes(mod)) continue;
+        const next = stateOf(best.names.map((other, j) => (j === i ? mod : other)));
+        if (next && next.value > best.value + 1e-9) {
+          best = next;
+          improved = true;
+          break;
+        }
+      }
+      if (improved) break;
+    }
+  }
+  const chosen = best.names;
+
+  const assigned = assignSlots(resolve(chosen), slotPolarities);
+  return {
+    goal: chosenGoal,
+    weapon: name,
+    mods: chosen.map((mod) => ({ name: mod, slot_polarity: assigned.get(mod) })),
+    ...(chosenStance && { stance: chosenStance }),
+    build: buildOf(chosen),
+    assumptions: "Assumes you own every mod at max rank, so use exclude for ones you do not have. Picks for raw damage, not armor or faction matchups, and ignores status effects, conditional bonuses, Rivens, Exilus and arcanes. The search is heuristic, so a better build can exist.",
+  };
+}
+
 function modMatches(mod, category) {
   if (category === "all") return true;
   if (category === "aura") return Boolean(mod.aura);
@@ -330,6 +473,7 @@ const modList = {
     ],
   },
 };
+const modNames = { type: "array", items: { type: "string" } };
 const queryProps = { query: { type: "string", description: "Part of a name." }, limit: { type: "number" } };
 
 const TOOLS = [
@@ -399,13 +543,34 @@ const TOOLS = [
   },
 ];
 
+TOOLS.push({
+  name: "suggest_weapon_build",
+  description: "Suggest the mods that give a weapon the most damage, within its capacity, polarities and mod conflicts. Returns the mods with the slot polarity for each, and the full build result.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      weapon: { type: "string" },
+      goal: { type: "string", enum: Object.keys(GOAL_SCORES), description: "Defaults to sustained_dps for guns and burst_dps for melee. heavy_attack is melee only." },
+      mods: { ...modNames, description: "Mods that must be in the build." },
+      exclude: { ...modNames, description: "Mods not to use, such as ones you do not own." },
+      polarities: { ...modNames, description: "The weapon's slot polarities, if you have added Forma. Defaults to the weapon's own." },
+      stance: { type: "string", description: "Melee only. Defaults to a fitting stance, chosen only for its capacity." },
+      combo_multiplier: { type: "number", description: "Melee only. Combo multiplier from 1 to 12. Default 12." },
+      attack: { type: "string", description: "Attack mode from list_weapons. Defaults to the first." },
+      catalyst: { type: "boolean", description: "Orokin Catalyst installed. Default true." },
+    },
+    required: ["weapon"],
+  },
+  run: suggestWeaponBuild,
+});
+
 function handle({ method, params }) {
   switch (method) {
     case "initialize":
       return {
         protocolVersion: params?.protocolVersion ?? "2025-06-18",
         capabilities: { tools: {} },
-        serverInfo: { name: "warframe-builder", version: "0.3.0" },
+        serverInfo: { name: "warframe-builder", version: "0.4.0" },
       };
     case "ping":
       return {};
