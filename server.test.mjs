@@ -16,7 +16,7 @@ after(() => rmSync(home, { recursive: true, force: true }));
 
 function session(...requests) {
   const input = requests.map((r, i) => JSON.stringify({ jsonrpc: "2.0", id: i + 1, ...r })).join("\n") + "\n";
-  const { stdout } = spawnSync(process.execPath, [server], { input, encoding: "utf8", env: process.env });
+  const { stdout } = spawnSync(process.execPath, [server], { input, encoding: "utf8", env: process.env, maxBuffer: 64 * 1024 * 1024 }); // sweeps over every weapon pass the default 1 MB
   return stdout.trim().split("\n").map((line) => JSON.parse(line));
 }
 
