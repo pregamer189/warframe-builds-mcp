@@ -1,16 +1,21 @@
 #!/usr/bin/env node
 // Regenerates data.json from WFCD warframe-items, plus the Warframe wiki for rank 30 stats.
 import { writeFileSync } from "node:fs";
+import { parseLuaAfter } from "./lua.mjs";
 
 const WFCD = "https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json";
 const WIKI = "https://wiki.warframe.com/w/Module:Warframes/data?action=raw";
-const WIKI_WEAPONS = (slot) => `https://wiki.warframe.com/w/Module:Weapons/data/${slot}?action=raw`;
+const WIKI_MODULE = (name) => `https://wiki.warframe.com/w/Module:${name}?action=raw`;
+const WIKI_WEAPONS = (slot) => WIKI_MODULE(`Weapons/data/${slot}`);
 const OUTPUT = new URL("../data.json", import.meta.url);
 
 const MOD_SLOTS = {
   "Warframe Mod": "warframe", "Primary Mod": "primary", "Shotgun Mod": "shotgun", "Secondary Mod": "secondary",
-  "Melee Mod": "melee", "Stance Mod": "stance",
+  "Melee Mod": "melee", "Stance Mod": "stance", "Arch-Gun Mod": "archgun", "Arch-Melee Mod": "archmelee",
+  "Archwing Mod": "archwing", "Necramech Mod": "necramech", "Companion Mod": "companion",
 };
+// Companion mods are mostly for the companion itself, but claw mods go on its weapon.
+const FRAME_MOD_SLOTS = new Set(["warframe", "archwing", "necramech", "companion"]);
 const WARFRAME_STATS = {
   Health: "health", "Shield Capacity": "shields", Armor: "armor", "Energy Max": "energy",
   "Ability Strength": "strength", "Ability Duration": "duration", "Ability Range": "range", "Ability Efficiency": "efficiency",
@@ -22,7 +27,9 @@ const WEAPON_STATS = {
   Impact: "impact", Puncture: "puncture", Slash: "slash",
   Blast: "blast", Corrosive: "corrosive", Gas: "gas", Magnetic: "magnetic", Radiation: "radiation", Viral: "viral",
   "Critical Chance stacks with Combo Multiplier": "comboCritChance", "Status Chance per Combo Multiplier": "comboStatusChance",
-  "Melee Damage on Heavy Attack": "heavyDamage",
+  "Melee Damage on Heavy Attack": "heavyDamage", "Status Damage": "statusDamage",
+  "Melee Damage per Status Type affecting the target": "damagePerStatus", "Direct Damage per Status Type affecting the target": "damagePerStatus",
+  "Damage per Status Type affecting the target": "damagePerStatus",
 };
 const FLAT_WEAPON_STATS = { Range: "meleeRange", "Initial Combo": "initialCombo" };
 // First heavy attack multiplier per class, from the wiki's Melee page.
@@ -76,8 +83,9 @@ function importWarframes(items, wiki) {
       armor: overrides?.armor ?? w.armor,
       energy: overrides?.energy ?? w.power + 50,
       rank0: { health: w.health, shields: w.shield, armor: w.armor, energy: w.power },
-      // "aura" here marks an extra aura slot rather than a polarity.
-      auraPolarity: [w.aura].flat().find((polarity) => polarity && polarity !== "aura"),
+      // "aura" here marks a slot that takes any aura, which the wiki calls universal.
+      auraPolarity: [w.aura].flat()[0] === "aura" ? "universal" : [w.aura].flat()[0],
+      ...([w.aura].flat().length > 1 && { secondAuraPolarity: [w.aura].flat()[1] }),
       polarities: (w.polarities ?? []).filter((polarity) => polarity !== "aura"),
       mastery: w.masteryReq ?? 0,
       abilities: (w.abilities ?? []).map((a) => a.name),
@@ -90,29 +98,100 @@ function importWarframes(items, wiki) {
 // inconsistent for battery and burst weapons.
 function parseWikiWeapons(lua) {
   const weapons = {};
-  for (const match of lua.matchAll(/\n\t(?:\["[^"]+"\]|\w+) = \{\n([\s\S]*?)\n\t\}/g)) {
-    const body = match[1];
-    const name = body.match(/^\t\tName = "([^"]+)"/m)?.[1];
-    if (!name) continue;
-    const num = (key) => {
-      const value = body.match(new RegExp(`^\\t\\t${key} = ([\\d.]+)`, "m"));
-      return value ? Number(value[1]) : undefined;
-    };
+  for (const row of Object.values(parseLuaAfter(lua, "return"))) {
+    if (!row?.Name) continue;
     const attacks = {};
-    for (const attack of body.matchAll(/AmmoCost = ([\d.]+),[\s\S]*?AttackName = "([^"]+)",([\s\S]*?)(?=AmmoCost = |$)/g)) {
-      const chargeTime = attack[3].match(/ChargeTime = ([\d.]+)/)?.[1];
-      attacks[attack[2]] ??= { ammoCost: Number(attack[1]), chargeTime: chargeTime && Number(chargeTime) };
+    for (const attack of row.Attacks ?? []) {
+      if (attack.AttackName) {
+        attacks[attack.AttackName] ??= {
+          ammoCost: attack.AmmoCost, chargeTime: attack.ChargeTime, multishot: attack.Multishot, aoe: attack.ShotType === "AoE",
+        };
+      }
     }
-    const text = (key) => body.match(new RegExp(`^\\t\\t${key} = "([^"]+)"`, "m"))?.[1];
-    weapons[name] = {
-      magazine: num("Magazine"), reload: num("Reload"), attacks,
-      trigger: text("Trigger"),
-      tags: [...(body.match(/^\t\tCompatibilityTags = \{([^}]*)\}/m)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((tag) => tag[1]),
-      weaponClass: text("Class"), stancePolarity: text("StancePolarity")?.toLowerCase(),
-      heavyAttack: num("HeavyAttack"), range: num("MeleeRange"), windUp: num("WindUp"),
+    weapons[row.Name] = {
+      row, magazine: row.Magazine, reload: row.Reload, attacks,
+      trigger: row.Trigger, tags: row.CompatibilityTags ?? [],
+      weaponClass: row.Class, stancePolarity: row.StancePolarity?.toLowerCase(),
+      heavyAttack: row.HeavyAttack, range: row.MeleeRange, windUp: row.WindUp, maxRank: row.MaxRank,
     };
   }
   return weapons;
+}
+
+// Builds a weapon from a wiki row, for those WFCD does not list: Exalted, Archwing and companion weapons.
+// "Aura" marks a slot type in these lists, not a polarity.
+const POLARITY = (list) => (list ?? []).map((polarity) => polarity.toLowerCase()).filter((polarity) => polarity !== "aura");
+function weaponFromWiki(entry, slot) {
+  const { row } = entry;
+  const attacks = (row.Attacks ?? []).filter((a) => Object.keys(a.Damage ?? {}).length);
+  if (!attacks.length) return undefined;
+  const isMelee = ["melee", "archmelee", "claws"].includes(slot);
+  const modes = attacks.map((a) => ({
+    name: a.AttackName ?? "Normal Attack",
+    damage: Object.fromEntries(Object.entries(a.Damage).map(([type, value]) => [type.toLowerCase(), round(value)])),
+    critChance: round((a.CritChance ?? 0) * 100),
+    critDamage: a.CritMultiplier ?? 1,
+    statusChance: round((a.StatusChance ?? 0) * 100),
+    fireRate: a.ChargeTime && !a.FireRate ? round(1 / a.ChargeTime) : a.FireRate ?? 1,
+    ammoCost: a.AmmoCost ?? 1,
+    pellets: a.Multishot ?? 1,
+    ...(a.ShotType === "AoE" && { aoe: true }),
+  })).sort((a, b) => Number(/^(Partially|Uncharged|Single Pellet)/.test(a.name)) - Number(/^(Partially|Uncharged|Single Pellet)/.test(b.name)));
+  return {
+    type: row.Class ?? row.Slot,
+    slot,
+    pellets: attacks[0].Multishot ?? 1,
+    magazine: row.Magazine ?? 0,
+    reload: round(row.Reload ?? 0),
+    mastery: row.Mastery ?? 0,
+    ...(row.MaxRank > 30 && { maxRank: row.MaxRank }),
+    polarities: POLARITY(row.Polarities),
+    trigger: row.Trigger,
+    ...(entry.tags.length && { tags: entry.tags }),
+    ...(row.Class === "Exalted Weapon" && { exalted: true }),
+    ...(isMelee && {
+      stancePolarity: entry.stancePolarity,
+      ...(row.HeavyAttack && { heavyAttack: row.HeavyAttack }),
+      range: row.MeleeRange,
+      windUp: row.WindUp,
+    }),
+    modes,
+  };
+}
+
+function wikiWeaponSlot(row) {
+  const byClass = (weaponClass) => {
+    if (/Shotgun/.test(weaponClass)) return "shotgun";
+    if (/Rifle|Bow|Launcher|Speargun|Crossbow/.test(weaponClass)) return "primary";
+    if (/Pistol/.test(weaponClass)) return "secondary";
+    return "melee";
+  };
+  if (row.Slot === "Primary") return row.Class === "Shotgun" ? "shotgun" : "primary";
+  if (row.Slot === "Secondary") return "secondary";
+  if (row.Slot === "Melee") return "melee";
+  if (row.Slot === "Archgun") return "archgun";
+  if (row.Slot === "Archmelee") return "archmelee";
+  if (row.Slot === "Beast") return "claws";
+  if (row.Slot === "Robotic" || row.Slot === "Hound") return byClass(row.Class);
+  return undefined; // atmosphere copies, vehicles, emplacements and gear are not modded as weapons
+}
+
+function importWikiOnlyWeapons(rows, weapons) {
+  let added = 0;
+  const known = new Set(Object.keys(weapons).map((name) => name.toLowerCase()));
+  for (const [name, entry] of Object.entries(rows)) {
+    if (known.has(name.toLowerCase())) continue;
+    // WFCD lists hybrid weapons by one name, so "Vinquibus" already covers its gun form.
+    if (name === "Vinquibus (Primary)") continue;
+    const slot = wikiWeaponSlot(entry.row);
+    const weapon = slot && weaponFromWiki(entry, slot);
+    if (!weapon) continue;
+    weapons[name] = weapon;
+    added++;
+  }
+  // The wiki splits this one by form, which is more exact than WFCD's single entry.
+  if (weapons["Dark Split-Sword (Dual Swords)"]) delete weapons["Dark Split-Sword"];
+  return added;
 }
 
 // Reads mod conflicts and descriptions. Its BaseDrain and MaxRank are not used: rendered wiki pages and WFCD
@@ -179,23 +258,26 @@ function heavyAttack(w, extra, attacks) {
 
 function importWeapons(items, wiki) {
   const weapons = {};
+  // WFCD writes a few names differently, such as Ax-52 for AX-52.
+  const wikiNames = new Map(Object.keys(wiki).map((name) => [name.toLowerCase(), name]));
   for (const w of items) {
     // Some weapons list an attack with no damage ahead of their real one, which would default to 0 DPS.
     const attacks = (w.attacks ?? []).filter((a) => Object.keys(a.damage ?? {}).length);
     if (!attacks.length) continue;
     const melee = w.category === "Melee";
     const slot = melee ? "melee" : w.type === "Shotgun" ? "shotgun" : w.category === "Primary" ? "primary" : "secondary";
-    const extra = wiki[w.name];
-    weapons[w.name] = {
+    const extra = wiki[wikiNames.get(w.name.toLowerCase())];
+    weapons[extra?.row.Name ?? w.name] = {
       type: melee ? extra?.weaponClass ?? "Melee" : w.type,
       slot,
       pellets: w.multishot ?? 1,
       magazine: extra?.magazine ?? w.magazineSize ?? 0,
       reload: round(extra?.reload ?? w.reloadTime ?? 0),
       mastery: w.masteryReq ?? 0,
-      polarities: w.polarities ?? [],
+      polarities: POLARITY(w.polarities),
       exilusPolarity: w.exilusPolarity,
       trigger: extra?.trigger ?? w.trigger,
+      ...(extra?.maxRank > 30 && { maxRank: extra.maxRank }),
       ...(extra?.tags.length && { tags: extra.tags }),
       ...(melee && {
         stancePolarity: extra?.stancePolarity ?? w.stancePolarity,
@@ -212,17 +294,55 @@ function importWeapons(items, wiki) {
         statusChance: a.status_chance,
         fireRate: attackRate(a, w, extra?.attacks[a.name]),
         ammoCost: extra?.attacks[a.name]?.ammoCost ?? 1,
-      })).sort((a, b) => Number(/^(Partially|Uncharged)/.test(a.name)) - Number(/^(Partially|Uncharged)/.test(b.name))),
+        pellets: extra?.attacks[a.name]?.multishot ?? w.multishot ?? 1,
+        ...((a.shot_type === "AoE" || extra?.attacks[a.name]?.aoe) && { aoe: true }),
+      })).sort((a, b) => Number(/^(Partially|Uncharged|Single Pellet)/.test(a.name)) - Number(/^(Partially|Uncharged|Single Pellet)/.test(b.name))),
     };
   }
   return weapons;
 }
 
+// Reads effects that need a trigger, such as "On Kill: +40% Multishot for 20s. Stacks up to 2x."
+function parseConditional(line, stats) {
+  const match = line.match(/^((?:On|When|While|After) [^:]+):\s*(?:(\d+(?:\.\d+)?)% chance for )?([+-]?\d+(?:\.\d+)?)% (.+?)(?: when Aiming)?(?: to ([A-Z][^.]*?))?(?: for (\d+(?:\.\d+)?)s)?\.?(?: Stacks up to (\d+)x\.?)?$/);
+  const stat = match && stats[match[4]];
+  if (!stat) return undefined;
+  return {
+    trigger: match[1],
+    ...(match[2] && { chance: Number(match[2]) }),
+    effects: { [stat]: Number(match[3]) },
+    ...(match[5] && { appliesTo: match[5] }),
+    ...(match[6] && { seconds: Number(match[6]) }),
+    stacks: Number(match[7] ?? 1),
+    text: line,
+  };
+}
+
 function parseLines(lines, stats) {
   const effects = {};
   const other = [];
+  const conditional = [];
   for (const raw of lines) {
     const line = raw.replace(/<[^>]+>/g, "").replace(/\\n/g, " ").replace(/\s+/g, " ").trim();
+    const faction = stats === WEAPON_STATS && line.match(/^x(\d+(?:\.\d+)?) Damage to (.+)$/);
+    if (faction) {
+      effects[`faction:${faction[2]}`] = round((Number(faction[1]) - 1) * 100);
+      continue;
+    }
+    // What an aura does for its own Warframe. Squadmates get the rest, which stays listed as text.
+    const aura = stats === WARFRAME_STATS && line.match(/^(Squad (?:gains|receives)|You lose) \+?(\d+(?:\.\d+)?)% (Maximum Health|Maximum Shields?|Shield Capacity|Armor|Ability Strength|Ability Duration|Ability Range|Ability Efficiency|Energy Max|Maximum Energy)/);
+    if (aura) {
+      const stat = { "Maximum Health": "health", "Maximum Shield": "shields", "Maximum Shields": "shields", "Maximum Energy": "energy" }[aura[3]] ?? stats[aura[3]];
+      effects[stat] = (effects[stat] ?? 0) + Number(aura[2]) * (aura[1] === "You lose" ? -1 : 1);
+      if (aura[1] === "You lose") other.push(line);
+      continue;
+    }
+    const triggered = parseConditional(line, stats);
+    if (triggered) {
+      conditional.push(triggered);
+      continue;
+    }
+    if (/Multishot cannot be modified/.test(line)) effects.multishotLocked = 1;
     const flat = stats === WEAPON_STATS && line.match(/^([+-]?\d+(?:\.\d+)?) (.+)$/);
     if (flat && FLAT_WEAPON_STATS[flat[2]]) {
       effects[FLAT_WEAPON_STATS[flat[2]]] = (effects[FLAT_WEAPON_STATS[flat[2]]] ?? 0) + Number(flat[1]);
@@ -238,7 +358,7 @@ function parseLines(lines, stats) {
     if (match[4] === "Bows") effects.fireRateBow = Number(match[1]) * Number(match[3]);
     if (match[4] === "Heavy Attacks") effects.heavyCritChance = Number(match[1]) * (Number(match[3]) - 1);
   }
-  return { effects, other };
+  return { effects, other, ...(conditional.length && { conditional }) };
 }
 
 // Names can have several variants: tutorial Beginner/Intermediate copies, unobtainable Expert copies, and a
@@ -263,7 +383,8 @@ function pickVariant(variants, wikiMods) {
 }
 
 async function importMods(items, wikiMods, weapons) {
-  const weaponTags = new Set(Object.values(weapons).flatMap((w) => w.tags ?? []));
+  const weaponTags = new Set(["MODULAR_GUN", ...Object.values(weapons).flatMap((w) => w.tags ?? [])]);
+  const sets = Object.fromEntries(items.filter((m) => m.type === "Mod Set Mod").map((m) => [m.uniqueName, m]));
   const groups = new Map();
   for (const m of items) {
     if (!MOD_SLOTS[m.type]) continue;
@@ -277,8 +398,8 @@ async function importMods(items, wikiMods, weapons) {
   const flawedOnly = { repaired: [], unverified: [] };
   for (const variants of groups.values()) {
     const m = pickVariant(variants, wikiMods);
-    const slot = MOD_SLOTS[m.type];
-    const stats = slot === "warframe" ? WARFRAME_STATS : WEAPON_STATS;
+    const slot = m.type === "Companion Mod" && /Claws/.test(m.compatName ?? "") ? "claws" : MOD_SLOTS[m.type];
+    const stats = FRAME_MOD_SLOTS.has(slot) ? WARFRAME_STATS : WEAPON_STATS;
     // A Beginner or Intermediate ID points at the wiki's Flawed row, so those go by name to reach the real mod.
     const flawedCopy = /\/(Beginner|Intermediate)\//.test(m.uniqueName);
     const wikiMod = (!flawedCopy && wikiMods.byId[m.uniqueName]) || wikiMods.byName[m.name.toLowerCase()];
@@ -306,6 +427,8 @@ async function importMods(items, wikiMods, weapons) {
       }
     }
     const top = levels.at(-1) ?? { effects: {}, other: [] };
+    const multishotLocked = Boolean(top.effects.multishotLocked);
+    for (const level of levels) delete level.effects.multishotLocked;
 
     const entry = {
       slot,
@@ -317,8 +440,15 @@ async function importMods(items, wikiMods, weapons) {
       effects: top.effects,
     };
     if (top.other.length) entry.other = top.other;
+    if (top.conditional) entry.conditional = top.conditional;
+    if (m.modSet) {
+      const set = sets[m.modSet];
+      entry.set = m.modSet.split("/").at(-2);
+      if (set?.stats) entry.setBonus = set.stats;
+    }
     if (m.compatName === "AURA") entry.aura = true;
     if (slot === "stance") entry.stance = true;
+    if (multishotLocked) entry.multishotLocked = true;
     if (/PvP/.test(m.uniqueName)) entry.pvpOnly = true;
     if (/Fire Rate cannot be modified/.test(wikiMod?.description ?? "")) entry.fireRateLocked = true;
     // Only tags a real weapon has matter here. SEMI_AUTO goes by each weapon's trigger, as few carry the tag.
@@ -341,7 +471,7 @@ async function importMods(items, wikiMods, weapons) {
       nonLinear++;
     }
 
-    const table = slot === "warframe" ? warframeMods : weaponMods;
+    const table = FRAME_MOD_SLOTS.has(slot) ? warframeMods : weaponMods;
     if (table[m.name]) {
       // The same name exists for several weapon classes, so the later one gets a qualified key.
       table[`${m.name} (${slot})`] = entry;
@@ -352,33 +482,180 @@ async function importMods(items, wikiMods, weapons) {
   return { warframeMods, weaponMods, nonLinear, flawedOnly };
 }
 
+function importOtherFrames(items, kind) {
+  const frames = {};
+  for (const f of items) {
+    if (!f.health || f.productCategory === undefined && !f.type) continue;
+    if (kind === "companion" && !/Sentinel|Kavat|Kubrow|Predasite|Vulpaphyla|Hound|Moa|Pets/.test(f.type ?? "")) continue;
+    if (/\b(Resource|Parts?)\b/.test(f.type ?? "")) continue;
+    frames[f.name] = {
+      kind,
+      type: f.type,
+      // These are the stats the sources list. Unlike Warframes, they have no published rank 30 rule.
+      health: f.health, shields: f.shield ?? 0, armor: f.armor ?? 0, energy: f.power ?? 0,
+      polarities: (f.polarities ?? []).filter((polarity) => polarity !== "aura"),
+      mastery: f.masteryReq ?? 0,
+      abilities: (f.abilities ?? []).map((a) => a.name),
+    };
+  }
+  return frames;
+}
+
+function importArcanes(items) {
+  const weaponTypes = { "Primary Arcane": "primary", "Shotgun Arcane": "shotgun", "Bow Arcane": "bow", "Secondary Arcane": "secondary", "Melee Arcane": "melee", "Zaw Arcane": "zaw", "Kitgun Arcane": "kitgun" };
+  const arcanes = {};
+  for (const a of items) {
+    const levels = a.levelStats ?? [];
+    if (!a.name || !levels.length || a.name === "Arcane") continue;
+    // A trigger's line break is part of it, and sources repeat a stat as both a line and its own entry.
+    const lines = [...new Set((levels.at(-1).stats ?? []).flatMap((line) => line.split(/(?<!:)\\n/)))];
+    const forWeapon = parseLines(lines, WEAPON_STATS);
+    const forFrame = parseLines(lines, WARFRAME_STATS);
+    arcanes[a.name] = {
+      type: weaponTypes[a.type] ?? (a.type ?? "Arcane").replace(/ Arcane$/, "").toLowerCase(),
+      rarity: a.rarity,
+      maxRank: levels.length - 1,
+      text: lines.map((line) => line.replace(/<[^>]+>/g, "").replace(/\\n/g, " ").replace(/\s+/g, " ").trim()),
+      ...(Object.keys(forWeapon.effects).length && { weaponEffects: forWeapon.effects }),
+      ...(forWeapon.conditional && { weaponConditional: forWeapon.conditional }),
+      ...(Object.keys(forFrame.effects).length && { frameEffects: forFrame.effects }),
+      ...(forFrame.conditional && { frameConditional: forFrame.conditional }),
+    };
+  }
+  return arcanes;
+}
+
+// Each combo's total damage multiplier and its length, which melee DPS needs. Only combos with a timed animation count.
+function importStances(lua) {
+  const stances = {};
+  for (const [name, stance] of Object.entries(parseLuaAfter(lua, "local StanceData ="))) {
+    if (!stance?.WeaponType || !stance.StanceName || stance.ConclaveOnly) continue;
+    const combos = [];
+    for (const key of ["Forward", "Neutral", "Block", "Forward Block"]) {
+      const combo = stance[key];
+      if (!combo?.Duration || !combo.Attacks) continue;
+      let hits = 0;
+      let multiplier = 0;
+      for (const attack of combo.Attacks) {
+        (attack.Dmg ?? []).forEach((dmg, i) => {
+          const count = attack.Hits?.[i] ?? 1;
+          hits += count;
+          multiplier += (dmg / 100) * count;
+        });
+      }
+      combos.push({ input: key, name: combo.Name, duration: combo.Duration, hits, multiplier: round(multiplier) });
+    }
+    if (combos.length) stances[name] = { weaponType: stance.WeaponType, combos };
+  }
+  return stances;
+}
+
+// Each faction's damage multipliers. Since Damage 3.0 these are a flat x1.5 or x0.5, with no enemy-specific types.
+function importFactions(lua) {
+  const { Health, Types } = parseLuaAfter(lua, "local DamageTypes =");
+  const factions = {};
+  for (const [name, info] of Object.entries(Health)) {
+    if (info.Type !== "Health" || !info.Faction?.includes(name)) continue; // skips Damage 2.0 types and non-enemies
+    if (["Tenno", "Overguard", "Object"].includes(name)) continue;
+    factions[name] = {};
+  }
+  for (const [type, info] of Object.entries(Types)) {
+    for (const faction of info.Positives ?? []) if (factions[faction]) factions[faction][type.toLowerCase()] = 1.5;
+    for (const faction of info.Negatives ?? []) if (factions[faction]) factions[faction][type.toLowerCase()] = 0.5;
+  }
+  return factions;
+}
+
+function importModular(lua) {
+  const { KitgunPrimary, KitgunSecondary, Zaw } = parseLuaAfter(lua, "return");
+  const kitgun = (table) => ({
+    chambers: Object.fromEntries(Object.entries(table.Chamber).map(([name, c]) => [name, {
+      damage: c.Damage, fireRate: c.FireRate, magazine: c.Magazine, critChance: c.CritChance, critDamage: c.CritMultiplier,
+      statusChance: c.StatusChance, trigger: c.Trigger, multishot: c.Multishot ?? 1, ammoCost: c.AmmoCost ?? 1, tags: c.CompatibilityTags ?? [],
+    }])),
+    grips: Object.keys(table.Grip),
+    loaders: Object.fromEntries(Object.entries(table.Loader).map(([name, l]) => [name, {
+      critChance: l.CritChance, critDamage: l.CritMultiplier, statusChance: l.StatusChance, magazine: l.Magazine, reload: l.Reload,
+    }])),
+  });
+  return {
+    kitgun: { primary: kitgun(KitgunPrimary), secondary: kitgun(KitgunSecondary) },
+    zaw: {
+      strikes: Object.fromEntries(Object.entries(Zaw.Strike).map(([name, z]) => [name, {
+        damage: z.Damage, critChance: z.CritChance, critDamage: z.CritMultiplier, statusChance: z.StatusChance, speed: z.Speed,
+        types: z.Type, twoHandedFactor: z.Multi?.TwoHanded?.Base ?? 1,
+      }])),
+      grips: Object.fromEntries(Object.entries(Zaw.Grip).map(([name, g]) => [name, { damage: g.Damage, speed: g.Speed, hands: g.Type }])),
+      links: Object.fromEntries(Object.entries(Zaw.Link).map(([name, l]) => [name, {
+        damage: l.Damage, speed: l.Speed, critChance: l.CritChance ?? 0, statusChance: l.StatusChance ?? 0,
+      }])),
+    },
+  };
+}
+
 function check(condition, message) {
   if (!condition) throw new Error(`Sanity check failed: ${message}. The source format may have changed; data.json was not written.`);
 }
 
-const [warframes, primary, secondary, melee, mods, wikiLua, wikiPrimary, wikiSecondary, wikiMelee, wikiModsLua] = await Promise.all([
-  fetchText(`${WFCD}/Warframes.json`).then(JSON.parse),
-  fetchText(`${WFCD}/Primary.json`).then(JSON.parse),
-  fetchText(`${WFCD}/Secondary.json`).then(JSON.parse),
-  fetchText(`${WFCD}/Melee.json`).then(JSON.parse),
-  fetchText(`${WFCD}/Mods.json`).then(JSON.parse),
+const [
+  warframes, primary, secondary, melee, mods, arcaneItems, archwingItems, sentinelItems, petItems,
+  wikiLua, wikiPrimary, wikiSecondary, wikiMelee, wikiArchwing, wikiCompanion, wikiModsLua, wikiStances, wikiDamage, wikiModular,
+] = await Promise.all([
+  ...["Warframes", "Primary", "Secondary", "Melee", "Mods", "Arcanes", "Archwing", "Sentinels", "Pets"]
+    .map((file) => fetchText(`${WFCD}/${file}.json`).then(JSON.parse)),
   fetchText(WIKI),
   fetchText(WIKI_WEAPONS("primary")),
   fetchText(WIKI_WEAPONS("secondary")),
   fetchText(WIKI_WEAPONS("melee")),
-  fetchText("https://wiki.warframe.com/w/Module:Mods/data?action=raw"),
+  fetchText(WIKI_WEAPONS("archwing")),
+  fetchText(WIKI_WEAPONS("companion")),
+  fetchText(WIKI_MODULE("Mods/data")),
+  fetchText(WIKI_MODULE("Stances/data")),
+  fetchText(WIKI_MODULE("DamageTypes/data")),
+  fetchText(WIKI_MODULE("Modular/data")),
 ]);
 
 const wiki = parseWikiWarframes(wikiLua);
 const { frames, counts } = importWarframes(warframes, wiki);
-const wikiWeapons = { ...parseWikiWeapons(wikiPrimary), ...parseWikiWeapons(wikiSecondary), ...parseWikiWeapons(wikiMelee) };
+const wikiWeapons = {
+  ...parseWikiWeapons(wikiPrimary), ...parseWikiWeapons(wikiSecondary), ...parseWikiWeapons(wikiMelee),
+  ...parseWikiWeapons(wikiArchwing), ...parseWikiWeapons(wikiCompanion),
+};
 // WFCD's melee file also holds Zaw parts, which are not weapons on their own. Some real melee weapons are typed Rifle there.
 const weapons = importWeapons([...primary, ...secondary, ...melee.filter((w) => w.type !== "Zaw Component")], wikiWeapons);
+const wikiOnly = importWikiOnlyWeapons(wikiWeapons, weapons);
 const { warframeMods, weaponMods, nonLinear, flawedOnly } = await importMods(mods, parseWikiMods(wikiModsLua), weapons);
 
 // Values confirmed against the wiki's rendered pages when this script was written.
 check(Object.keys(frames).length >= 100, "too few Warframes");
-check(Object.keys(weapons).length >= 500, "too few weapons");
+check(Object.keys(weapons).length >= 650, "too few weapons");
+const stances = importStances(wikiStances);
+const factions = importFactions(wikiDamage);
+const modular = importModular(wikiModular);
+const arcanes = importArcanes(arcaneItems);
+const companions = importOtherFrames(sentinelItems.concat(petItems), "companion");
+const archwings = importOtherFrames(archwingItems, "archwing");
+const necramechs = importOtherFrames(warframes.filter((w) => w.type === "Necramech"), "necramech");
+check(frames.Jade?.auraPolarity === "universal" && frames.Jade.secondAuraPolarity === "vazarin", "Jade's aura slots");
+check(weapons["Boar Prime"]?.modes.find((m) => m.name === "Incarnon Form")?.pellets === 1, "pellets per attack");
+check(weapons.Ogris?.modes[1].aoe && weapons.Kohm?.modes[0].pellets === 12, "attack details");
+check(weapons["AX-52"] && !weapons["Ax-52"], "weapon name matching");
+check(weapons["Kuva Bramma"]?.maxRank === 40, "rank 40 weapons");
+check(arcanes["Arcane Fury"]?.weaponConditional?.[0].appliesTo === "Melee Weapons", "arcane restrictions");
+check(warframeMods["Power Donation"]?.effects.strength === -30 && warframeMods.Physique?.effects.health === 20, "aura effects");
+check(weapons["Exalted Blade"]?.exalted && weapons["Exalted Blade"].slot === "melee", "Exalted Blade");
+check(weapons.Larkspur?.slot === "archgun" && weapons.Veritux?.slot === "archmelee", "Archwing weapons");
+check(weapons["Adarza Claws"]?.slot === "claws" && weapons["Deth Machine Rifle"]?.slot === "primary", "companion weapons");
+check(weaponMods["Blood Rush"]?.blockedTags?.includes("POWER_WEAPON"), "Blood Rush is blocked on Exalted weapons");
+check(stances["Blind Justice"]?.combos.some((c) => c.input === "Forward" && c.duration === 3.05), "Blind Justice timing");
+check(factions.Grineer?.corrosive === 1.5 && factions.Sentient?.corrosive === 0.5, "faction tables");
+check(modular.zaw.strikes.Balla?.damage.Puncture === 134.4 && modular.zaw.grips.Korb?.damage === 28, "Zaw parts");
+check(modular.kitgun.secondary.chambers.Catchmoon?.damage.Gibber.Heat === 119, "Kitgun parts");
+check(arcanes["Primary Merciless"]?.weaponConditional?.[0].stacks === 12, "Primary Merciless");
+check(weaponMods["Galvanized Chamber"]?.conditional?.[0].effects.multishot > 0, "Galvanized Chamber");
+check(weaponMods["Condition Overload"]?.effects.damagePerStatus === 80, "Condition Overload");
+check(weaponMods["Bane Of Grineer"]?.effects["faction:Grineer"] === 30, "Bane of Grineer");
+check(companions["Adarza Kavat"]?.health === 310 && archwings.Itzal?.health === 200 && necramechs.Voidrig?.health === 1400, "other frames");
 check(frames.Excalibur?.health === 370 && frames.Excalibur?.energy === 150, "Excalibur rank 30 stats");
 check(warframeMods.Vitality?.effects.health === 100 && warframeMods.Vitality?.maxRank === 10, "Vitality");
 check(warframeMods["Transient Fortitude"]?.effects.duration === -27.5, "Transient Fortitude");
@@ -406,18 +683,28 @@ check(weaponMods["Crimson Dervish"]?.stance && weaponMods["Crimson Dervish"]?.ba
 const data = {
   meta: {
     imported: new Date().toISOString().slice(0, 10),
-    sources: ["WFCD/warframe-items (MIT)", "wiki.warframe.com data modules (rank 30 stats, magazine, reload, ammo cost, melee class and heavy attacks)"],
+    sources: ["WFCD/warframe-items (MIT)", "wiki.warframe.com data modules"],
     note: "Warframe game data belongs to Digital Extremes. Regenerate with npm run import-data.",
   },
   warframes: frames,
+  companions,
+  archwings,
+  necramechs,
   weapons,
   warframeMods,
   weaponMods,
+  arcanes,
+  stances,
+  factions,
+  modular,
+  heavyMultipliers: HEAVY_MULTIPLIERS,
 };
 writeFileSync(OUTPUT, `${JSON.stringify(data, null, 1)}\n`);
 
 console.log(`Warframes: ${Object.keys(frames).length} (rank 30 from wiki ${counts.wiki}, base frame ${counts.baseFrame}, default rule ${counts.defaultRule})`);
 console.log(`Weapons: ${Object.keys(weapons).length} (${Object.values(weapons).filter((w) => w.slot === "melee").length} melee, ${Object.values(weapons).filter((w) => w.heavyUnconfirmed).length} with unconfirmed heavy attacks)`);
 console.log(`Mods: ${Object.keys(warframeMods).length} Warframe, ${Object.keys(weaponMods).length} weapon, ${nonLinear} with exact per-rank values`);
+console.log(`Other frames: ${Object.keys(companions).length} companions, ${Object.keys(archwings).length} Archwings, ${Object.keys(necramechs).length} Necramechs`);
+console.log(`Wiki-only weapons: ${wikiOnly}. Arcanes: ${Object.keys(arcanes).length}. Stances: ${Object.keys(stances).length}. Factions: ${Object.keys(factions).length}.`);
 console.log(`Flawed-only mods repaired from wiki pages: ${flawedOnly.repaired.length} (${flawedOnly.repaired.join(", ")})`);
 console.log(`Flawed-only mods left unverified: ${flawedOnly.unverified.length} (${flawedOnly.unverified.join(", ")})`);
