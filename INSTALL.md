@@ -43,9 +43,9 @@ On Windows, if the app can't start `npx`, use `"command": "cmd"` and `"args": ["
 
 ## 4. Offer it in normal Claude Desktop chats
 
-Claude Code and normal Claude Desktop chats have separate settings. If Claude Desktop is installed, ask whether the person wants the builder in normal chats too. Its settings are in `claude_desktop_config.json`, in `~/Library/Application Support/Claude/` on Mac and `%APPDATA%\Claude\` on Windows. Create the file if it doesn't exist.
+Claude Code and normal Claude Desktop chats have separate settings. If Claude Desktop is installed (`/Applications/Claude.app` on Mac, or the `%APPDATA%\Claude\` folder on Windows), ask whether the person wants the builder in normal chats too. If you can't tell, ask them. Its settings are in `claude_desktop_config.json`, in `~/Library/Application Support/Claude/` on Mac and `%APPDATA%\Claude\` on Windows.
 
-If they say yes, make a backup copy next to the file and tell them where it is. Then add this under `mcpServers`, creating that section if needed, and keep all their other settings. Claude Desktop doesn't load the shell's PATH, so on Mac use the full path from `which npx`, and put the folders from `which node` and `which git` in `PATH`. Windows can use the `cmd` form above without `env`.
+If they say yes and the file exists, copy it to `claude_desktop_config.json.backup` next to it, or add the date to that name if a backup is already there, and tell them where it is. If it doesn't exist, create it. Then add this under `mcpServers`, creating that section if needed, and keep all their other settings. Claude Desktop doesn't load the shell's PATH, so on Mac use the full path from `which npx`, and put the folders from `which node` and `which git` in `PATH`. Windows can use the `cmd` form above without `env`.
 
 ```json
 "warframe-builds": {
@@ -61,7 +61,9 @@ On Mac, check it the way Claude Desktop will start it. This should print a versi
 env -i HOME="$HOME" PATH="/folder/with/node:/folder/with/git:/usr/bin:/bin" /full/path/to/npx -y github:pregamer189/warframe-builds-mcp#release --version
 ```
 
-Tell them to quit and reopen Claude Desktop, and to restore the backup if it reports a problem with the file. If the path contains a Node version, as it does with nvm, warn them that removing that version stops the builder working in normal chats until the path is updated.
+If it fails, put the backup back (or remove the entry if there's no backup), show the person the error and stop. `An unknown git error occurred` means `PATH` is missing the folder with Git. Don't change anything else in the file.
+
+If it works, tell them to quit and reopen Claude Desktop, and to restore the backup if it reports a problem with the file. If the path contains a Node version, as it does with nvm, warn them that removing that version stops the builder working in normal chats until the path is updated.
 
 ## 5. Finish
 
