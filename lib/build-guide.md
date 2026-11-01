@@ -1,11 +1,6 @@
----
-name: warframe-builder
-description: Create, explain and improve Warframe builds, including themed or unusual ones, using the player's own mods. Use when someone asks for a Warframe, weapon, Zaw, Kitgun or companion build, a build for an enemy or Steel Path, a mod synergy, what to farm for a build, or what to sell or keep.
----
+# How to build with these tools
 
-# Warframe builder
-
-Work with the `warframe-builds` tools. Nothing here is tested in-game, so be clear about what is calculated and what is theory.
+Nothing here is tested in-game, so be clear about what is calculated and what is theory.
 
 ## Start
 

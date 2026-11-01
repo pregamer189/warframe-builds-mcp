@@ -4,19 +4,23 @@ A Warframe builder companion for Claude and other AI assistants. Ask for "a spor
 
 ## Install
 
-Paste this into Claude Code, Cursor or another assistant that can run commands:
+**Claude Desktop:** download [warframe-builds.mcpb](https://github.com/pregamer189/warframe-builds-mcp/releases/latest/download/warframe-builds.mcpb) and double-click it. You don't need to install Node.
+
+**Claude Code, Cursor and other assistants that can run commands:** paste this in.
 
 ```text
 Install the Warframe Builds MCP server for me by following https://github.com/pregamer189/warframe-builds-mcp/blob/main/INSTALL.md
 ```
 
-**In normal Claude Desktop chat**, which can't install things itself: download [warframe-builds.mcpb](https://github.com/pregamer189/warframe-builds-mcp/releases/latest/download/warframe-builds.mcpb) and double-click it. You don't need to install Node.
+Both give you the same server, with the same tools and guidance.
 
-[INSTALL.md](INSTALL.md) has every route, including how to install by hand. Phones and claude.ai on the web aren't supported, because the server runs on your computer.
+### On claude.ai or your phone
+
+The server runs on your computer, so it can't run there. [A lite skill](INSTALL.md#the-lite-skill) gives general advice instead, but it's much weaker: no game data, calculators, saved mods or live prices, and it doesn't update by itself. Use it only if you can't use the server.
 
 ## What it does
 
-- **Builds from synergies.** `explore_synergies` hands the assistant the ability text, augments, and fitting mods and arcanes for anything in the game data, including new items. The assistant reasons about combinations, then checks each one. The included skill teaches it this routine.
+- **Builds from synergies.** `explore_synergies` hands the assistant the ability text, augments, and fitting mods and arcanes for anything in the game data, including new items. The assistant reasons about combinations, then checks each one. The server teaches it this routine through `build_guide`.
 - **Calculators.** Damage by type, crit, status, damage over time, DPS, capacity, Warframe stats and effective health. Enemies scale with level and Steel Path.
 - **Mod suggestions.** The most damage for a named enemy, or minimums such as 175% efficiency with as much strength as possible, including where to put Forma.
 - **Your account.** A local profile holds the mods you have or lack, your Rivens, spare items and saved builds, and suggestions respect it.
@@ -27,6 +31,7 @@ Install the Warframe Builds MCP server for me by following https://github.com/pr
 
 | Tool | What it does |
 | --- | --- |
+| `build_guide` | Tells the assistant how to use the rest. It calls this first |
 | `explore_synergies` | Gathers ability text, augments and matching mods and arcanes for a theme |
 | `suggest_weapon_build` | Picks the mods that do the most damage to the enemy you name, within capacity, polarities and conflicts. It can also plan Forma |
 | `suggest_warframe_build` | Picks mods towards a goal such as strength or effective health, or minimums such as 175% efficiency |
@@ -107,7 +112,7 @@ npm run import-data
 
 ## Development
 
-Installs follow the `release` branch, which CI moves forward only after every test passes on `main`. A new version in `package.json`, `manifest.json` and `.claude-plugin/plugin.json` also publishes the desktop extension.
+Installs follow the `release` branch, which CI moves forward only after every test passes on `main`. A new version in `package.json` and `manifest.json` also publishes the desktop extension and the lite skill.
 
 ```bash
 npm test
@@ -117,8 +122,9 @@ npm test
 | --- | --- |
 | `server.mjs` | MCP protocol, tool definitions and input checks |
 | `lib/` | Calculations: `weapons`, `frames`, `target` (enemies), `mods` (capacity and effects), `suggest`, plus `synergy`, `profile`, `market`, `alecaframe` and `update` |
-| `skills/` | The Claude skill |
-| `manifest.json`, `.claude-plugin/`, `.mcp.json` | Desktop extension and plugin packaging |
+| `lib/build-guide.md` | The guidance `build_guide` returns. Change how builds are made here |
+| `manifest.json` | Desktop extension packaging |
+| `skills/` | The lite skill, for places that can't run the server |
 | `scripts/` | The data import, and a parser for the wiki's Lua tables |
 
 ## License

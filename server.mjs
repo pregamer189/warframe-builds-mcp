@@ -16,6 +16,8 @@ import { weaponBuild } from "./lib/weapons.mjs";
 const SUPPORTED_PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
+const BUILD_GUIDE = readFileSync(new URL("./lib/build-guide.md", import.meta.url), "utf8");
+
 const LIMITS = [
   "Results are theoretical averages from community-maintained data, and were not checked in-game.",
   "Excludes weak points, shields, armor stripped by status, and most ability buffs unless passed through extra_effects.",
@@ -109,13 +111,19 @@ function listModularParts({ kind }) {
   };
 }
 
-function dataInfo() {
+const updateNotice = () => {
   const latest = latestKnownVersion();
+  return latest && newerVersion(latest, version)
+    ? { newer_version_available: latest, update_how: "Tell the player. Desktop extension: download warframe-builds.mcpb again from the project's GitHub releases. Otherwise: restart the app." }
+    : {};
+};
+
+function dataInfo() {
   const count = (table) => Object.keys(table).length;
   const pvp = Object.values({ ...data.warframeMods, ...data.weaponMods }).filter((mod) => mod.pvpOnly).length;
   return {
     server_version: version,
-    ...(latest && newerVersion(latest, version) && { newer_version_available: latest, update_how: "See INSTALL.md in the project on GitHub." }),
+    ...updateNotice(),
     profile_folder: HOME,
     data: DATA_VERSION,
     sources: data.meta.sources,
@@ -171,6 +179,12 @@ const levelProp = { type: "number", description: "The item's rank, which sets it
 const statGoals = "strength, duration, range, efficiency, health, shields, armor, energy or effective_health";
 
 const TOOLS = [
+  {
+    name: "build_guide",
+    description: "Call this once, before anything else, whenever someone asks about Warframe builds, mods, enemies or what to sell. It returns how to pick the right tools, reason from synergies, and present builds.",
+    inputSchema: { type: "object", properties: {} },
+    run: () => ({ guide: BUILD_GUIDE, ...updateNotice() }),
+  },
   {
     name: "list_warframes",
     description: "Find Warframes, companions, Archwings or Necramechs by name, with stats, polarities and abilities.",
@@ -463,7 +477,7 @@ async function handle({ method, params }) {
         protocolVersion: SUPPORTED_PROTOCOLS.includes(params?.protocolVersion) ? params.protocolVersion : SUPPORTED_PROTOCOLS[0],
         capabilities: { tools: {} },
         serverInfo: { name: "warframe-builder", version },
-        instructions: "A Warframe builder companion. For a themed or unusual build, start with explore_synergies, reason from the ability, mod and arcane text, then check each build with warframe_build or weapon_build. For the most damage or a stat goal, use the suggest tools. Check get_profile early, and use the player's Rivens and notes. Build lookups forgive case, punctuation and partial names, and suggest close matches for typos. Tell the user about any warnings and not_calculated effects in a result. Say which parts are calculated and which are theory from the text, because nothing is tested in-game.",
+        instructions: "A Warframe builder companion. Call build_guide once before helping with any Warframe build, mods, enemies or selling; it explains how to use these tools. Check get_profile early and respect the player's mods, Rivens and notes. Tell the player about warnings and not_calculated effects in results. Say which parts are calculated and which are theory, because nothing is tested in-game.",
       };
     case "ping":
       return {};

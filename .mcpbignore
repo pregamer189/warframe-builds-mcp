@@ -1,8 +1,6 @@
 .git
 .github
 .claude
-.claude-plugin
-.mcp.json
 scripts
 skills
 server.test.mjs
