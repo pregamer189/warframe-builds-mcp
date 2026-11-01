@@ -1,10 +1,10 @@
 # Install instructions
 
-**If you are an assistant:** do the steps below in order and tell the person what you changed. Ask before installing anything or changing a config file. Don't ask for passwords, and never read or send anything from the person's Warframe install. If you can't run commands, as in normal chat, you can't install this: tell the person to paste the same request into Claude Code or the Code tab in Claude Desktop, or to use [the other way](#without-claude-code).
+**If you are an assistant:** do the steps below in order and tell the person what you changed. The person's request covers steps 2 and 3. Ask first before installing Node or Git, replacing an existing entry, or doing step 4. Don't ask for passwords, and never read or send anything from the person's Warframe install. If you can't run commands, as in normal chat, you can't install this: tell the person to paste the same request into Claude Code or the Code tab in Claude Desktop, or to use [the other way](#without-claude-code).
 
 ## 1. Check what's needed
 
-`node --version` must show 18 or newer, and `git --version` must work. If either is missing, tell the person and offer to install it.
+`node --version` must show 18 or newer, and `git --version` must work. `npx` needs Git to download from GitHub. If either is missing, tell the person and offer to install it.
 
 ## 2. Download and test it
 
@@ -12,19 +12,21 @@
 npx -y github:pregamer189/warframe-builds-mcp#release --version
 ```
 
-This should print a version number. It can take a minute the first time.
+This should print a version number, possibly with some npm notices. It can take a minute the first time. If it fails, show the person the error and stop.
 
 ## 3. Add it to the app
 
-**Claude Code:** run `claude mcp get warframe-builds`. If it already exists, leave it as it is and tell the person. Otherwise:
+**Claude Code:** run `claude mcp get warframe-builds`. If it already exists, show the person what it points to and ask whether to replace it. Otherwise:
 
 ```bash
 claude mcp add --scope user warframe-builds -- npx -y github:pregamer189/warframe-builds-mcp#release
 ```
 
-Then check that `claude mcp list` shows it connected.
+Then check that `claude mcp list` shows it connected. If it doesn't, show the person the error and stop.
 
-**Other apps:** add this to the app's MCP config file.
+If the `claude` command isn't found, as can happen in the Code tab, back up `~/.claude.json` and add the entry from below to its top-level `mcpServers`.
+
+**Other apps:** back up the app's MCP config file, then add this to it. Check the app's documentation if you can't find the file.
 
 ```json
 {
@@ -41,9 +43,9 @@ On Windows, if the app can't start `npx`, use `"command": "cmd"` and `"args": ["
 
 ## 4. Offer it in normal Claude Desktop chats
 
-Claude Code and normal Claude Desktop chats have separate settings. If `claude_desktop_config.json` exists, ask whether the person wants the builder in normal chats too. It's in `~/Library/Application Support/Claude/` on Mac and `%APPDATA%\Claude\` on Windows.
+Claude Code and normal Claude Desktop chats have separate settings. If Claude Desktop is installed, ask whether the person wants the builder in normal chats too. Its settings are in `claude_desktop_config.json`, in `~/Library/Application Support/Claude/` on Mac and `%APPDATA%\Claude\` on Windows. Create the file if it doesn't exist.
 
-If they say yes, make a backup copy of the file. Then add this under `mcpServers`, creating that section if needed, and keep everything else in the file exactly as it is. Claude Desktop doesn't load the shell's PATH, so on Mac use the full path from `which npx`, and put the folders from `which node` and `which git` in `PATH`. Windows can use the `cmd` form above without `env`.
+If they say yes, make a backup copy next to the file and tell them where it is. Then add this under `mcpServers`, creating that section if needed, and keep all their other settings. Claude Desktop doesn't load the shell's PATH, so on Mac use the full path from `which npx`, and put the folders from `which node` and `which git` in `PATH`. Windows can use the `cmd` form above without `env`.
 
 ```json
 "warframe-builds": {
@@ -53,7 +55,13 @@ If they say yes, make a backup copy of the file. Then add this under `mcpServers
 }
 ```
 
-Tell them to quit and reopen Claude Desktop, and to restore the backup if it reports a problem with the file.
+On Mac, check it the way Claude Desktop will start it. This should print a version number:
+
+```bash
+env -i HOME="$HOME" PATH="/folder/with/node:/folder/with/git:/usr/bin:/bin" /full/path/to/npx -y github:pregamer189/warframe-builds-mcp#release --version
+```
+
+Tell them to quit and reopen Claude Desktop, and to restore the backup if it reports a problem with the file. If the path contains a Node version, as it does with nvm, warn them that removing that version stops the builder working in normal chats until the path is updated.
 
 ## 5. Finish
 
@@ -79,4 +87,4 @@ AlecaFrame adds currencies, trades and relics. In its **Stats** tab, create a pu
 
 ## Remove it
 
-Remove the extension or MCP entry from your app, then delete the `.warframe-builds` folder in your home folder. It holds your profile and any downloaded game data.
+In Claude Code, run `claude mcp remove warframe-builds -s user`. In Claude Desktop, remove the `warframe-builds` entry from `claude_desktop_config.json`, or remove the extension if you installed the file. Then delete the `.warframe-builds` folder in your home folder. It holds your profile and any downloaded game data.

@@ -16,7 +16,7 @@ after(() => rmSync(home, { recursive: true, force: true }));
 
 function session(...requests) {
   const input = requests.map((r, i) => JSON.stringify({ jsonrpc: "2.0", id: i + 1, ...r })).join("\n") + "\n";
-  const { stdout } = spawnSync(process.execPath, [server], { input, encoding: "utf8", env: process.env });
+  const { stdout } = spawnSync(process.execPath, [server], { input, encoding: "utf8", env: process.env, maxBuffer: 64 * 1024 * 1024 }); // sweeps over every weapon pass the default 1 MB
   return stdout.trim().split("\n").map((line) => JSON.parse(line));
 }
 
@@ -234,7 +234,7 @@ test("every weapon and Warframe calculates, and listing is capped", () => {
   const weapons = Object.keys(weaponData);
   assert.ok(weapons.length >= 500);
   for (const [name, build] of sweep("weapon_build", "weapon", weapons)) {
-    const isMelee = weaponData[name].slot === "melee";
+    const isMelee = ["melee", "archmelee", "claws"].includes(weaponData[name].slot); // no ammo, so no sustained DPS
     assert.ok(build.burst_dps > 0 && (isMelee || build.sustained_dps > 0), `${name} has bad DPS`);
     // With no mods, nothing may be lost: every damage type in the data must reach the result.
     const expected = Object.values(weaponData[name].modes[0].damage).reduce((total, v) => total + v, 0);
