@@ -4,16 +4,23 @@ import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 
 const data = JSON.parse(readFileSync(new URL("./data.json", import.meta.url), "utf8"));
+const DATA_VERSION = `imported ${data.meta.imported}`;
 const BASE_CAPACITY = 30; // rank 30 frame or weapon, doubled by a Reactor/Catalyst
 const COMPOSITES = {
   "cold+heat": "blast", "electricity+toxin": "corrosive", "heat+toxin": "gas",
   "cold+electricity": "magnetic", "electricity+heat": "radiation", "cold+toxin": "viral",
 };
 const ELEMENTS = ["heat", "cold", "electricity", "toxin"];
+const PHYSICAL = ["impact", "puncture", "slash"];
+const COMBINED = Object.values(COMPOSITES);
 
 const find = (table, name, kind) => {
   const key = Object.keys(table).find((k) => k.toLowerCase() === String(name).toLowerCase());
-  if (!key) throw new Error(`Unknown ${kind}: ${name}. Add it to data.json or check the spelling.`);
+  if (!key) {
+    const words = String(name).toLowerCase().split(/\s+/);
+    const close = Object.keys(table).filter((k) => words.some((w) => k.toLowerCase().includes(w))).slice(0, 5);
+    throw new Error(`Unknown ${kind}: ${name}.${close.length ? ` Did you mean: ${close.join(", ")}?` : ""}`);
+  }
   return [key, table[key]];
 };
 const round = (n) => Math.round(n * 100) / 100;
@@ -25,36 +32,43 @@ function resolveMods(entries, table) {
     const rank = spec.rank ?? mod.maxRank;
     if (rank < 0 || rank > mod.maxRank) throw new Error(`${name}: rank must be 0-${mod.maxRank}`);
     const scale = (rank + 1) / (mod.maxRank + 1);
-    const effects = Object.fromEntries(Object.entries(mod.effects).map(([k, v]) => [k, v * scale]));
-    return { name, mod, rank, effects, baseDrain: mod.drain - (mod.maxRank - rank), slot: spec.slot_polarity };
+    const effects = mod.effectsByRank?.[rank]
+      ?? Object.fromEntries(Object.entries(mod.effects).map(([k, v]) => [k, v * scale]));
+    return { name, mod, rank, effects, drain: mod.baseDrain + rank, slot: spec.slot_polarity };
   });
 }
 
+const hasPolarity = (slot) => slot && slot !== "none";
+
 // Matching polarity halves drain, a different polarity adds 25%, an empty slot changes nothing.
 function slottedDrain(m) {
-  if (!m.slot) return m.baseDrain;
-  return Math.round(m.slot === m.mod.polarity ? m.baseDrain / 2 : m.baseDrain * 1.25);
+  if (!hasPolarity(m.slot)) return m.drain;
+  return Math.round(m.slot === m.mod.polarity ? m.drain / 2 : m.drain * 1.25);
+}
+
+// Auras add capacity instead: a matching polarity doubles it and a different one removes 25%.
+function auraCapacity(aura) {
+  if (!hasPolarity(aura.slot)) return aura.drain;
+  return aura.slot === aura.mod.polarity ? aura.drain * 2 : Math.round(aura.drain * 0.75);
 }
 
 function capacityReport(mods, { reactor, aura }) {
   const warnings = [];
-  const seen = new Set();
-  for (const m of mods) {
-    const id = m.mod.family ?? m.name;
-    if (seen.has(id)) warnings.push(`${m.name} conflicts with another equipped mod (same mod or variant).`);
-    seen.add(id);
-  }
-  let capacity = BASE_CAPACITY * (reactor ? 2 : 1);
-  if (aura) {
-    const a = aura.slot === undefined ? aura.baseDrain
-      : aura.slot === aura.mod.polarity ? aura.baseDrain * 2 : Math.round(aura.baseDrain * 0.75);
-    capacity += a;
-  }
+  mods.forEach((m, i) => {
+    const conflict = mods.slice(0, i).find((other) => other.name === m.name
+      || m.mod.incompatible?.includes(other.name) || other.mod.incompatible?.includes(m.name));
+    if (conflict) warnings.push(`${m.name} conflicts with ${conflict.name}: they cannot be equipped together.`);
+    if (m.mod.unverified) warnings.push(`${m.name} values could not be verified and may be the weaker Flawed version.`);
+  });
+  const capacity = BASE_CAPACITY * (reactor ? 2 : 1) + (aura ? auraCapacity(aura) : 0);
   const drains = mods.map((m) => ({ mod: m.name, rank: m.rank, drain: slottedDrain(m) }));
   const used = drains.reduce((sum, d) => sum + d.drain, 0);
   if (used > capacity) warnings.push(`Over capacity by ${used - capacity}. Add polarities, lower ranks or drop a mod.`);
   return { capacity, used, remaining: capacity - used, drains, warnings };
 }
+
+// Effects the calculator cannot model (conditional or utility text), so results never hide them.
+const notCalculated = (mods) => mods.flatMap((m) => (m.mod.other ?? []).map((effect) => ({ mod: m.name, at_max_rank: effect })));
 
 function warframeBuild({ warframe, mods = [], aura, exilus, reactor = true, base_stats }) {
   const [name, stored] = find(data.warframes, warframe, "warframe");
@@ -62,18 +76,36 @@ function warframeBuild({ warframe, mods = [], aura, exilus, reactor = true, base
   const regular = resolveMods(mods, data.warframeMods);
   if (regular.length > 8) throw new Error("A Warframe has 8 regular mod slots.");
   for (const m of regular) if (m.mod.aura) throw new Error(`${m.name} is an aura: pass it as "aura".`);
-  const auraMod = aura ? resolveMods([aura], data.warframeMods)[0] : undefined;
+
+  let auraMod;
+  if (aura) {
+    [auraMod] = resolveMods([aura], data.warframeMods);
+    if (!auraMod.mod.aura) throw new Error(`${auraMod.name} is not an aura mod.`);
+    auraMod.slot ??= stored.auraPolarity; // the frame's own aura slot, unless told otherwise
+  }
   const exilusMod = exilus ? resolveMods([exilus], data.warframeMods)[0] : undefined;
   const equipped = exilusMod ? [...regular, exilusMod] : regular;
 
   const sum = (stat) => equipped.reduce((total, m) => total + (m.effects[stat] ?? 0), 0);
+  // Percentage mods apply to the rank 30 stat, after rank bonuses.
   const scaled = (stat) => round(base[stat] * (1 + sum(stat) / 100));
   const efficiency = Math.min(100 + sum("efficiency"), 175);
   const health = scaled("health");
+  const shields = scaled("shields");
   const armor = scaled("armor");
+
+  const capacity = capacityReport(equipped, { reactor, aura: auraMod });
+  const frameName = name.replace(/ (Prime|Umbra)$/, "");
+  for (const m of equipped) {
+    if (!["WARFRAME", "AURA"].includes(m.mod.compat) && m.mod.compat !== frameName) {
+      capacity.warnings.push(`${m.name} only fits ${m.mod.compat}.`);
+    }
+  }
+  if (exilusMod && !exilusMod.mod.exilus) capacity.warnings.push(`${exilusMod.name} is not an Exilus mod.`);
+
   return {
     warframe: name,
-    stats: { health, shields: scaled("shields"), armor, energy: scaled("energy") },
+    stats: { health, shields, armor, energy: scaled("energy") },
     abilities: {
       strength: round(100 + sum("strength")),
       duration: round(Math.max(100 + sum("duration"), 12.5)),
@@ -82,86 +114,157 @@ function warframeBuild({ warframe, mods = [], aura, exilus, reactor = true, base
       ability_cost_multiplier: round(2 - efficiency / 100),
     },
     damage_reduction_pct: round((armor / (armor + 300)) * 100),
-    effective_health: round(health / (300 / (armor + 300))),
-    mod_capacity: capacityReport(equipped, { reactor, aura: auraMod }),
-    data_warning: data._note,
+    // The wiki's formula: armor mitigates health only, and shields count double.
+    effective_health: round((health * (armor + 300)) / 300 + shields / 0.5),
+    mod_capacity: capacity,
+    not_calculated: notCalculated(auraMod ? [...equipped, auraMod] : equipped),
+    assumptions: "Rank 30. Excludes arcanes, archon shards, set bonuses, passives and overshields.",
+    data: DATA_VERSION,
   };
 }
 
-function combineElements(order) {
-  const singles = [];
-  for (const { element, value } of order) {
-    const existing = singles.find((s) => s.element === element);
+// Single elements combine in mod order, with the weapon's innate elements last.
+function combineElements(singles) {
+  const merged = [];
+  for (const { element, value } of singles) {
+    const existing = merged.find((s) => s.element === element);
     if (existing) existing.value += value;
-    else singles.push({ element, value });
+    else merged.push({ element, value });
   }
   const result = {};
-  for (let i = 0; i < singles.length; i += 2) {
-    const [a, b] = [singles[i], singles[i + 1]];
+  for (let i = 0; i < merged.length; i += 2) {
+    const [a, b] = [merged[i], merged[i + 1]];
     if (!b) result[a.element] = a.value;
     else result[COMPOSITES[[a.element, b.element].sort().join("+")]] = a.value + b.value;
   }
   return result;
 }
 
-function weaponBuild({ weapon, mods = [], catalyst = true, base_stats }) {
-  const [name, stored] = find(data.weapons, weapon, "weapon");
-  const base = { ...stored, ...base_stats };
-  const resolved = resolveMods(mods, data.weaponMods);
-  if (resolved.length > 8) throw new Error("A weapon has 8 regular mod slots.");
-  const sum = (stat) => resolved.reduce((total, m) => total + (m.effects[stat] ?? 0), 0) / 100;
+function weaponCompatibility(m, name, weapon) {
+  if (m.mod.slot !== weapon.slot) return `${m.name} is a ${m.mod.slot} mod, but ${name} takes ${weapon.slot} mods.`;
+  const compat = m.mod.compat;
+  if (["PRIMARY", "Rifle", "Shotgun", "Pistol"].includes(compat)) return undefined;
+  const byType = { "Assault Rifle": "Rifle", Sniper: "Sniper", Bow: "Bow", Thrown: "Throwing" };
+  const fits = byType[compat] ? weapon.type === byType[compat] : name.toLowerCase().includes(compat.toLowerCase());
+  return fits ? undefined : `${m.name} only fits ${compat}.`;
+}
 
-  const elements = combineElements(resolved.flatMap((m) =>
-    ELEMENTS.filter((e) => m.effects[e]).map((e) => ({ element: e, value: m.effects[e] }))));
-  const elementalBonus = Object.values(elements).reduce((total, v) => total + v, 0) / 100;
+function weaponBuild({ weapon, mods = [], exilus, attack, catalyst = true, base_stats }) {
+  const [name, record] = find(data.weapons, weapon, "weapon");
+  const mode = attack
+    ? record.modes.find((m) => m.name.toLowerCase() === String(attack).toLowerCase())
+    : record.modes[0];
+  if (!mode) throw new Error(`${name} has no attack "${attack}". Modes: ${record.modes.map((m) => m.name).join(", ")}`);
+  const stats = { ...mode, pellets: record.pellets, magazine: record.magazine, reload: record.reload, ...base_stats };
 
-  const moddedBase = base.damage * (1 + sum("damage"));
-  const perShot = moddedBase * (1 + elementalBonus);
-  const multishot = 1 + sum("multishot");
-  const critChance = (base.critChance / 100) * (1 + sum("critChance"));
-  const critDamage = base.critDamage * (1 + sum("critDamage"));
-  const fireRate = base.fireRate * (1 + sum("fireRate"));
-  const magazine = Math.round(base.magazine * (1 + sum("magazine")));
+  const regular = resolveMods(mods, data.weaponMods);
+  if (regular.length > 8) throw new Error("A weapon has 8 regular mod slots.");
+  const exilusMod = exilus ? resolveMods([exilus], data.weaponMods)[0] : undefined;
+  const equipped = exilusMod ? [...regular, exilusMod] : regular;
+  const sum = (stat) => equipped.reduce((total, m) => total + (m.effects[stat] ?? 0), 0) / 100;
+
+  // Elemental and physical bonuses scale from base damage after +damage mods.
+  const damageMult = Math.max(1 + sum("damage"), 0);
+  const moddedTotal = Object.values(stats.damage).reduce((total, v) => total + v, 0) * damageMult;
+  const byType = {};
+  for (const type of PHYSICAL) {
+    const base = stats.damage[type] ?? 0;
+    if (base) byType[type] = base * damageMult * Math.max(1 + sum(type), 0);
+  }
+  const singles = [
+    ...equipped.flatMap((m) => Object.keys(m.effects).filter((e) => ELEMENTS.includes(e))
+      .map((element) => ({ element, value: (moddedTotal * m.effects[element]) / 100 }))),
+    ...ELEMENTS.filter((e) => stats.damage[e]).map((element) => ({ element, value: stats.damage[element] * damageMult })),
+  ];
+  const addDamage = (type, value) => { byType[type] = (byType[type] ?? 0) + value; };
+  for (const [type, value] of Object.entries(combineElements(singles))) addDamage(type, value);
+  for (const type of COMBINED) {
+    if (sum(type)) addDamage(type, moddedTotal * sum(type));
+  }
+  // Innate composites and types no mod can change, such as Void, only scale with +damage.
+  for (const [type, base] of Object.entries(stats.damage)) {
+    if (!PHYSICAL.includes(type) && !ELEMENTS.includes(type)) addDamage(type, base * damageMult);
+  }
+
+  const perPellet = Object.values(byType).reduce((total, v) => total + v, 0);
+  const shots = stats.pellets * (1 + sum("multishot"));
+  const critChance = (stats.critChance / 100) * (1 + sum("critChance"));
+  const critDamage = stats.critDamage * (1 + sum("critDamage"));
+  const fireBonus = record.type === "Bow" ? sum("fireRateBow") : sum("fireRate");
+  const fireRate = stats.fireRate * Math.max(1 + fireBonus, 0.01);
+  const magazine = Math.round(stats.magazine * (1 + sum("magazine")));
+  const reload = stats.reload / Math.max(1 + sum("reload"), 0.01);
   const avgCrit = 1 + critChance * (critDamage - 1);
-  const burst = perShot * multishot * avgCrit * fireRate;
-  const firingTime = magazine / fireRate;
+  const burst = perPellet * shots * avgCrit * fireRate;
+  const ammoCost = stats.ammoCost ?? 1;
+  const attacksPerMagazine = ammoCost > 0 ? magazine / ammoCost : 0;
+  const firingTime = fireRate > 0 ? attacksPerMagazine / fireRate : 0;
+  // Attacks that use no ammo and weapons with no magazine, such as Grimoire, never stop to reload.
+  const sustained = firingTime > 0 ? burst * (firingTime / (firingTime + reload)) : burst;
 
-  const warnings = resolved.filter((m) => m.mod.for !== base.type)
-    .map((m) => `${m.name} is a ${m.mod.for} mod, but ${name} is a ${base.type}.`);
-  const capacity = capacityReport(resolved, { reactor: catalyst });
-  capacity.warnings.push(...warnings);
+  const capacity = capacityReport(equipped, { reactor: catalyst });
+  for (const m of equipped) {
+    const warning = weaponCompatibility(m, name, record);
+    if (warning) capacity.warnings.push(warning);
+  }
+  if (exilusMod && !exilusMod.mod.exilus) capacity.warnings.push(`${exilusMod.name} is not an Exilus mod.`);
 
   return {
     weapon: name,
-    damage_per_shot: round(perShot),
-    elements_pct: elements,
-    multishot: round(multishot),
+    type: record.type,
+    attack: mode.name,
+    other_attacks: record.modes.filter((m) => m !== mode).map((m) => m.name),
+    damage_per_shot: round(perPellet),
+    damage_by_type: Object.fromEntries(Object.entries(byType).map(([type, v]) => [type, round(v)])),
+    pellets_or_multishot: round(shots),
+    damage_per_trigger: round(perPellet * shots),
     crit_chance_pct: round(critChance * 100),
     crit_multiplier: round(critDamage),
     average_crit_multiplier: round(avgCrit),
+    status_chance_pct: round(stats.statusChance * (1 + sum("statusChance"))),
     fire_rate: round(fireRate),
     magazine,
+    attacks_per_magazine: attacksPerMagazine > 0 ? round(attacksPerMagazine) : null,
+    reload_seconds: round(reload),
     burst_dps: round(burst),
-    sustained_dps: round(burst * (firingTime / (firingTime + base.reload))),
-    assumptions: "Before enemy armor, faction damage, status ticks and conditional bonuses.",
+    sustained_dps: round(sustained),
     mod_capacity: capacity,
-    data_warning: data._note,
+    not_calculated: notCalculated(equipped),
+    assumptions: "One attack mode only. Before enemy armor, faction damage, status ticks, charge time, arcanes and conditional bonuses.",
+    data: DATA_VERSION,
   };
 }
 
-function searchMods({ query = "", category = "all" }) {
-  const tables = { warframe: data.warframeMods, weapon: data.weaponMods };
+function modMatches(mod, category) {
+  if (category === "all") return true;
+  if (category === "aura") return Boolean(mod.aura);
+  if (category === "exilus") return Boolean(mod.exilus);
+  return mod.slot === category;
+}
+
+function searchMods({ query = "", category = "all", limit = 20 }) {
   const q = query.toLowerCase();
-  return Object.entries(tables)
-    .filter(([key]) => category === "all" || category === key)
-    .flatMap(([key, table]) => Object.entries(table)
-      .filter(([name, mod]) => `${name} ${Object.keys(mod.effects).join(" ")} ${mod.for ?? ""}`.toLowerCase().includes(q))
-      .map(([name, mod]) => ({ name, category: key, ...mod })));
+  const matches = Object.entries({ ...data.warframeMods, ...data.weaponMods })
+    .filter(([, mod]) => modMatches(mod, category))
+    .filter(([name, mod]) => `${name} ${Object.keys(mod.effects).join(" ")} ${mod.compat} ${(mod.other ?? []).join(" ")}`.toLowerCase().includes(q))
+    .sort(([a], [b]) => Number(b.toLowerCase().startsWith(q)) - Number(a.toLowerCase().startsWith(q)) || a.localeCompare(b));
+  return {
+    total: matches.length,
+    mods: matches.slice(0, limit).map(([name, { effectsByRank, ...mod }]) => ({ name, ...mod })),
+  };
+}
+
+function listEntries(table, { query = "", type, limit = 25 }) {
+  const q = query.toLowerCase();
+  const matches = Object.entries(table)
+    .filter(([name]) => name.toLowerCase().includes(q))
+    .filter(([, entry]) => !type || entry.type?.toLowerCase() === type.toLowerCase());
+  return { total: matches.length, results: Object.fromEntries(matches.slice(0, limit)) };
 }
 
 const modList = {
   type: "array",
-  description: "Mod names, or {name, rank, slot_polarity} objects. Rank defaults to max.",
+  description: "Mod names, or {name, rank, slot_polarity} objects. Rank defaults to max. Use slot_polarity \"none\" for an empty slot.",
   items: {
     anyOf: [
       { type: "string" },
@@ -173,42 +276,49 @@ const modList = {
     ],
   },
 };
-const statOverride = { type: "object", description: "Overrides for stored base stats, for when data.json is out of date." };
+const queryProps = { query: { type: "string", description: "Part of a name." }, limit: { type: "number" } };
 
 const TOOLS = [
   {
     name: "list_warframes",
-    description: "List the Warframes in the local dataset with their rank 30 base stats.",
-    inputSchema: { type: "object", properties: {} },
-    run: () => data.warframes,
+    description: "Find Warframes by name, with rank 30 and rank 0 stats, polarities and abilities.",
+    inputSchema: { type: "object", properties: queryProps },
+    run: (args) => listEntries(data.warframes, args),
   },
   {
     name: "list_weapons",
-    description: "List the weapons in the local dataset with their base stats.",
-    inputSchema: { type: "object", properties: {} },
-    run: () => data.weapons,
+    description: "Find primary and secondary weapons by name or type, with attack modes and stats.",
+    inputSchema: {
+      type: "object",
+      properties: { ...queryProps, type: { type: "string", description: "Rifle, Shotgun, Bow, Sniper, Launcher, Pistol, Dual Pistols or Throwing." } },
+    },
+    run: (args) => listEntries(data.weapons, args),
   },
   {
     name: "search_mods",
-    description: "Search mods by name, effect (for example strength or multishot) or weapon type.",
+    description: "Search Warframe, primary, shotgun and secondary mods by name, effect (for example strength or multishot) or effect text.",
     inputSchema: {
       type: "object",
-      properties: { query: { type: "string" }, category: { type: "string", enum: ["all", "warframe", "weapon"] } },
+      properties: {
+        query: { type: "string" },
+        category: { type: "string", enum: ["all", "warframe", "aura", "exilus", "primary", "shotgun", "secondary"] },
+        limit: { type: "number" },
+      },
     },
     run: searchMods,
   },
   {
     name: "warframe_build",
-    description: "Calculate a Warframe build: final stats, ability stats, armor mitigation and mod capacity.",
+    description: "Calculate a rank 30 Warframe build: final stats, ability stats, armor mitigation and mod capacity.",
     inputSchema: {
       type: "object",
       properties: {
         warframe: { type: "string" },
         mods: modList,
-        aura: { description: "Aura mod name or {name, rank, slot_polarity}. Adds capacity." },
+        aura: { description: "Aura mod name or {name, rank, slot_polarity}. Adds capacity. Defaults to the frame's aura polarity." },
         exilus: { description: "Exilus mod name or {name, rank, slot_polarity}." },
         reactor: { type: "boolean", description: "Orokin Reactor installed. Default true." },
-        base_stats: statOverride,
+        base_stats: { type: "object", description: "Overrides for rank 30 health, shields, armor or energy." },
       },
       required: ["warframe"],
     },
@@ -216,14 +326,16 @@ const TOOLS = [
   },
   {
     name: "weapon_build",
-    description: "Calculate a rifle, shotgun or pistol build: elements, crit, burst and sustained DPS, and mod capacity. Melee is not supported.",
+    description: "Calculate a primary or secondary weapon build: damage by type, crit, status, burst and sustained DPS, and mod capacity. Melee is not supported.",
     inputSchema: {
       type: "object",
       properties: {
         weapon: { type: "string" },
         mods: modList,
+        exilus: { description: "Exilus mod name or {name, rank, slot_polarity}." },
+        attack: { type: "string", description: "Attack mode from list_weapons, such as Incarnon Form. Defaults to the first." },
         catalyst: { type: "boolean", description: "Orokin Catalyst installed. Default true." },
-        base_stats: statOverride,
+        base_stats: { type: "object", description: "Overrides: damage (by type), critChance, critDamage, statusChance, fireRate, pellets, magazine, reload." },
       },
       required: ["weapon"],
     },
@@ -237,7 +349,7 @@ function handle({ method, params }) {
       return {
         protocolVersion: params?.protocolVersion ?? "2025-06-18",
         capabilities: { tools: {} },
-        serverInfo: { name: "warframe-builder", version: "0.1.0" },
+        serverInfo: { name: "warframe-builder", version: "0.2.0" },
       };
     case "ping":
       return {};
