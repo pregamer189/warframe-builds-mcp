@@ -24,6 +24,7 @@ The server runs on your computer, so it can't run there. [A lite skill](INSTALL.
 - **Calculators.** Damage by type, crit, status, damage over time, DPS, capacity, Warframe stats and effective health. Enemies scale with level and Steel Path.
 - **Mod suggestions.** The most damage for a named enemy, or minimums such as 175% efficiency with as much strength as possible, including where to put Forma.
 - **Your account.** A local profile holds the mods you have or lack, your Rivens, spare items and saved builds, and suggestions respect it.
+- **Special rules.** Hundreds of mechanics that players found and shared in videos, such as hidden multipliers and mods that don't do what they say, each with its date and source, and what later patches and the wiki say. See [Special rules](#special-rules).
 - **Selling.** Live prices and recent sales from warframe.market, with a warning before you sell a mod a saved build uses.
 - **AlecaFrame.** Optional currencies, trades and relics, using a public token you create.
 
@@ -37,6 +38,7 @@ The server runs on your computer, so it can't run there. [A lite skill](INSTALL.
 | `suggest_warframe_build` | Picks mods towards a goal such as strength or effective health, or minimums such as 175% efficiency |
 | `weapon_build` | Works out a weapon, Zaw or Kitgun build. Melee adds range, heavy attacks and per-combo stance DPS |
 | `warframe_build` | Works out a Warframe, companion, Archwing or Necramech build |
+| `special_rules` | Finds reported mechanics the game's text doesn't explain, with date, source and later patches |
 | `get_profile`, `update_profile` | Show and change your saved mods, items, Rivens and notes |
 | `save_build`, `delete_saved_build` | Keep the builds you like |
 | `market_price`, `sell_advice` | Live prices, and what to sell first |
@@ -87,6 +89,20 @@ Formulas come from the Warframe wiki, and the tests check them against the wiki'
 
 **Nothing was checked in-game**, and both sources are community maintained, so they can lag behind patches or contain mistakes. Treat the numbers as well-founded theory. Synergy builds go further: they're the assistant's reasoning from game text, so test them in the Simulacrum.
 
+## Special rules
+
+`lib/special-rules.json` holds mechanics reported in YouTube videos from January 2025 to October 2026, written in our own words with a link to the moment in each video. Each was checked against the official patch notes since its video, up to 44.1.4 (28 October 2026), and against the wiki:
+
+| Status | Meaning |
+| --- | --- |
+| `no_later_change` | Nothing found contradicts it, which doesn't prove it |
+| `changed` | A later patch changed it. The report is the old behaviour, and `later_patch` the new |
+| `disputed` | The wiki disagrees on some of it, or the check was inconclusive |
+| `contradicted` | The wiki or a patch says otherwise |
+| `fixed` | It no longer works |
+
+These checks were done by AI reading captions, notes and wiki text, **not by testing in-game**, and the calculators don't apply these rules. The file only updates with a new version of the server, and later patches aren't checked until then.
+
 ## Limits
 
 - **Left out of damage:** enemy health and time to kill, weak points, shields, armor stripped by status effects, ability buffs (unless passed through `extra_effects`), status duration mods, forced procs and the game's 1/32 damage rounding.
@@ -124,6 +140,7 @@ npm test
 | `server.mjs` | MCP protocol, tool definitions and input checks |
 | `lib/` | Calculations: `weapons`, `frames`, `target` (enemies), `mods` (capacity and effects), `suggest`, plus `synergy`, `profile`, `market`, `alecaframe` and `update` |
 | `lib/build-guide.md` | The guidance `build_guide` returns. Change how builds are made here |
+| `lib/special-rules.json` | The reported mechanics, with their sources and checks |
 | `manifest.json` | Packaging for the installable file |
 | `skills/` | The lite skill, for places that can't run the server |
 | `scripts/` | The data import, and a parser for the wiki's Lua tables |
