@@ -789,10 +789,12 @@ check(arcanes["Arcane Fury"]?.weaponConditional?.[0].appliesTo === "Melee Weapon
 check(warframeMods["Power Donation"]?.effects.strength === -30 && warframeMods.Physique?.effects.health === 20, "aura effects");
 check(weapons["Exalted Blade"]?.exalted && weapons["Exalted Blade"].slot === "melee", "Exalted Blade");
 check(weapons.Larkspur?.slot === "archgun" && weapons.Veritux?.slot === "archmelee", "Archwing weapons");
-const { behaviors: conditionOverload, unmapped: conditionOverloadUnmapped } = importConditionOverload(wikiConditionOverload, weapons);
+const { behaviors: conditionOverload, kitguns: conditionOverloadKitguns, stances: conditionOverloadStances, unmapped: conditionOverloadUnmapped } = importConditionOverload(wikiConditionOverload, weapons, stances);
 check(conditionOverload["Arca Plasmor"]?.["Normal Attack"]?.behavior === "multiplying", "Arca Plasmor multiplies Condition Overload");
 check(conditionOverload["Mutalist Cernos"]?.["Toxin Cloud"]?.ratio === 41, "Mutalist Cernos cloud reads the wrong base damage");
 check(Object.keys(conditionOverload).length >= 70, "too few Condition Overload measurements");
+check(conditionOverloadKitguns.Sporelacer?.secondary?.fixedBonus === 57, "Sporelacer's fixed Condition Overload bonus");
+check(conditionOverloadStances["Mountain's Edge"]?.Neutral === 1 && Object.keys(conditionOverloadStances).length >= 40, "too few stances measured for Condition Overload");
 check(weapons["Adarza Claws"]?.slot === "claws" && weapons["Deth Machine Rifle"]?.slot === "primary", "companion weapons");
 check(weaponMods["Blood Rush"]?.blockedTags?.includes("POWER_WEAPON"), "Blood Rush is blocked on Exalted weapons");
 check(stances["Blind Justice"]?.combos.some((c) => c.input === "Forward" && c.duration === 3.05), "Blind Justice timing");
@@ -856,6 +858,8 @@ const data = {
   modular,
   heavyMultipliers: HEAVY_MULTIPLIERS,
   conditionOverload,
+  conditionOverloadKitguns,
+  conditionOverloadStances,
 };
 writeFileSync(OUTPUT, `${JSON.stringify(data, null, 1)}\n`);
 
