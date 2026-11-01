@@ -43,9 +43,9 @@ jobs:
           node-version: 22
       - name: Install the package and start it with npx
         run: |
-          npm pack --pack-destination "$RUNNER_TEMP"
+          file=$(npm pack --silent --pack-destination "$RUNNER_TEMP")
           cd "$RUNNER_TEMP"
-          npx -y --package=./warframe-builds-mcp-*.tgz warframe-builds-mcp --version
+          npx -y --package="./$file" warframe-builds-mcp --version
       - name: Pack the installable file and start the server from it
         run: |
           npx -y @anthropic-ai/mcpb@2.1.2 validate manifest.json
