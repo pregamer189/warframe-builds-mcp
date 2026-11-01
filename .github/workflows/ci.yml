@@ -25,7 +25,8 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm test
 
-  # Runs both install routes the way people use them, on each system people use.
+  # Checks what both install routes deliver, on each system people use. npx can't install a pinned commit, so the real
+  # download is checked by verify-release below, once the release branch has moved.
   install:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -40,8 +41,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install this commit with npx
-        run: npx -y "github:${GITHUB_REPOSITORY}#${GITHUB_SHA}" --version | grep -F "$(node -p "require('./package.json').version")"
+      - name: Install the package and start it with npx
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP"
+          npx -y --package=./warframe-builds-mcp-*.tgz warframe-builds-mcp --version
       - name: Pack the installable file and start the server from it
         run: |
           npx -y @anthropic-ai/mcpb@2.1.2 validate manifest.json
@@ -76,3 +80,20 @@ jobs:
           npx -y @anthropic-ai/mcpb@2.1.2 pack . warframe-builds.mcpb
           (cd skills && zip -r ../warframe-builder-lite.zip warframe-builder-lite)
           gh release create "$version" warframe-builds.mcpb warframe-builder-lite.zip --target "$GITHUB_SHA" --title "$version" --notes "Install steps are in INSTALL.md."
+
+  # Runs the exact command from INSTALL.md against what people now get. On Windows it also runs the cmd form.
+  verify-release:
+    needs: release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx -y github:${{ github.repository }}#release --version
+      - if: runner.os == 'Windows'
+        shell: cmd
+        run: npx -y github:${{ github.repository }}#release --version
