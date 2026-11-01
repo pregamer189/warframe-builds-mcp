@@ -1,0 +1,10 @@
+{
+  "name": "warframe-builds",
+  "displayName": "Warframe Builds",
+  "version": "1.1.0",
+  "description": "A Warframe builder companion: themed builds from ability and mod synergies, damage and stat calculators, your saved mods and builds, and live market prices.",
+  "author": { "name": "Elias Blomberg", "url": "https://github.com/pregamer189" },
+  "repository": "https://github.com/pregamer189/warframe-builds-mcp",
+  "license": "MIT",
+  "keywords": ["warframe", "builds", "mcp"]
+}
