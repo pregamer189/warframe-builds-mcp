@@ -1,0 +1,31 @@
+{
+  "manifest_version": "0.3",
+  "name": "warframe-builds",
+  "display_name": "Warframe Builds",
+  "version": "1.1.0",
+  "description": "A Warframe builder companion: themed builds from synergies, calculators, your saved mods and builds, and live market prices.",
+  "author": { "name": "Elias Blomberg", "url": "https://github.com/pregamer189" },
+  "repository": { "type": "git", "url": "https://github.com/pregamer189/warframe-builds-mcp" },
+  "homepage": "https://github.com/pregamer189/warframe-builds-mcp",
+  "license": "MIT",
+  "keywords": ["warframe", "builds"],
+  "server": {
+    "type": "node",
+    "entry_point": "server.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server.mjs"],
+      "env": { "ALECAFRAME_PUBLIC_TOKEN": "${user_config.alecaframe_public_token}" }
+    }
+  },
+  "user_config": {
+    "alecaframe_public_token": {
+      "type": "string",
+      "title": "AlecaFrame public token (optional)",
+      "description": "From AlecaFrame's Stats tab: create a public link, then generate a token. Leave empty if you don't use AlecaFrame.",
+      "sensitive": true,
+      "required": false
+    }
+  },
+  "compatibility": { "platforms": ["darwin", "win32"], "runtimes": { "node": ">=18" } }
+}

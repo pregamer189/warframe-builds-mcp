@@ -1,14 +1,22 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { test } from "node:test";
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { parseLuaAfter } from "./scripts/lua.mjs";
 
 const server = fileURLToPath(new URL("./server.mjs", import.meta.url));
+// Tests never touch the network or the real profile.
+const home = mkdtempSync(join(tmpdir(), "warframe-builds-test-"));
+process.env.WARFRAME_BUILDS_HOME = home;
+process.env.WARFRAME_BUILDS_OFFLINE = "1";
+after(() => rmSync(home, { recursive: true, force: true }));
 
 function session(...requests) {
   const input = requests.map((r, i) => JSON.stringify({ jsonrpc: "2.0", id: i + 1, ...r })).join("\n") + "\n";
-  const { stdout } = spawnSync(process.execPath, [server], { input, encoding: "utf8" });
+  const { stdout } = spawnSync(process.execPath, [server], { input, encoding: "utf8", env: process.env });
   return stdout.trim().split("\n").map((line) => JSON.parse(line));
 }
 
@@ -32,10 +40,12 @@ test("completes the MCP handshake and lists tools", () => {
   );
   assert.equal(init.result.protocolVersion, "2025-06-18");
   assert.deepEqual(list.result.tools.map((t) => t.name), [
-    "list_warframes", "list_weapons", "list_modular_parts", "search_mods", "search_arcanes", "warframe_build", "weapon_build",
-    "suggest_weapon_build", "suggest_warframe_build", "data_info",
+    "list_warframes", "list_weapons", "list_enemies", "list_modular_parts", "search_mods", "search_arcanes", "warframe_build", "weapon_build",
+    "suggest_weapon_build", "suggest_warframe_build", "explore_synergies", "get_profile", "update_profile", "save_build", "delete_saved_build",
+    "market_price", "sell_advice", "alecaframe_account", "data_info",
   ]);
-  assert.ok(list.result.tools.every((t) => t.annotations.readOnlyHint));
+  const writers = list.result.tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name);
+  assert.deepEqual(writers, ["update_profile", "save_build", "delete_saved_build"]);
 });
 
 test("warframe_build applies mods to rank 30 stats", () => {
@@ -220,7 +230,7 @@ test("every weapon and Warframe calculates, and listing is capped", () => {
     return [names[i], JSON.parse(reply.result.content[0].text)];
   });
 
-  const weaponData = call("list_weapons", { limit: 1000 }).results;
+  const weaponData = call("list_weapons", { limit: 1000, detail: true }).results;
   const weapons = Object.keys(weaponData);
   assert.ok(weapons.length >= 500);
   for (const [name, build] of sweep("weapon_build", "weapon", weapons)) {
@@ -332,7 +342,7 @@ test("wiki tags block mods from the weapons they exclude", () => {
 });
 
 test("PvP-only mods warn", () => {
-  const { mod_capacity: capacity } = call("weapon_build", { weapon: "Soma Prime", mods: ["Lie In Wait"] });
+  const { mod_capacity: capacity } = call("weapon_build", { weapon: "Vectis", mods: ["Lie In Wait"] });
   assert.match(capacity.warnings.join(" "), /Conclave/);
 });
 
@@ -389,7 +399,7 @@ test("melee suggestions chase the goal and combo", () => {
   assert.ok(dps.mods.some((m) => m.name === "Blood Rush"));
   assert.match(call("suggest_weapon_build", { weapon: "Nikana Prime", goal: "sustained_dps" }).error, /no magazine/);
   assert.match(call("suggest_weapon_build", { weapon: "Soma Prime", goal: "heavy_attack" }).error, /not melee/);
-  assert.match(call("suggest_weapon_build", { weapon: "Soma Prime", goal: "nope" }).error, /must be one of/);
+  assert.match(call("suggest_weapon_build", { weapon: "Soma Prime", goal: "nope" }).error, /Unknown goal/);
 });
 
 test("enemy armor uses the wiki's enemy formula, not the Warframe one", () => {
@@ -763,7 +773,7 @@ test("bad input gets a clear error instead of a wrong answer", () => {
   assert.match(call("weapon_build", { weapon: "Soma Prime", mods: [7] }).error, /must be a name/);
   assert.match(call("warframe_build", {}).error, /Missing required argument: warframe/);
   assert.match(call("list_modular_parts", { kind: "gun" }).error, /must be one of/);
-  assert.match(call("weapon_build", { weapon: "Soma Prime", target: { faction: 3 } }).error, /must be of type string/);
+  assert.match(call("weapon_build", { weapon: "Soma Prime", target: { faction: 3 } }).error, /faction name/);
   assert.match(call("weapon_build", { weapon: "Soma Prime", target: { armor: -1 } }).error, /0 or more/);
   assert.match(call("weapon_build", { weapon: "Soma Prime", riven: { effects: { crit_chance: 200 } } }).error, /Unknown Riven effect/);
   assert.match(call("weapon_build", { weapon: "Soma Prime", extra_effects: { critical_chance: 200 } }).error, /Unknown extra effect/);
@@ -817,3 +827,241 @@ test("unknown names return a helpful tool error", () => {
 function round(n) {
   return Math.round(n * 100) / 100;
 }
+
+test("enemy levels scale armor by the wiki's formula", async () => {
+  const { armorAtLevel } = await import("./lib/target.mjs");
+  const armorOf = (target) => call("weapon_build", { weapon: "Soma Prime", target }).target;
+  // The scaling page's own figures: base armor 100 from base level 1.
+  assert.ok(Math.abs(armorAtLevel(100, 1, 100) - 1356) < 1);
+  assert.ok(Math.abs(armorAtLevel(100, 1, 75) - 1061) < 1);
+  assert.equal(armorAtLevel(10, 1, 1), 200, "the floor");
+  assert.equal(armorAtLevel(0, 1, 500), 0, "no armor stays none");
+  assert.equal(armorAtLevel(500, 8, 1000), 2700, "the cap");
+  const gunner = armorOf({ enemy: "Heavy Gunner", level: 50 });
+  assert.equal(gunner.enemy, "Heavy Gunner");
+  assert.equal(gunner.faction, "Grineer");
+  assert.equal(gunner.armor, Math.round(armorAtLevel(500, 8, 50) * 100) / 100);
+  assert.equal(armorOf({ enemy: "Heavy Gunner", level: 50, steel_path: true }).level, 150);
+  assert.equal(armorOf({ enemy: "Heavy Gunner", level: 150 }).armor, 2700);
+  assert.equal(armorOf("Heavy Gunner").level, 8, "plain text, at the enemy's base level");
+  assert.equal(armorOf("Grineer").faction, "Grineer");
+  assert.equal(armorOf({ enemy: "Heavy Gunner", armor: 100 }).armor, 100, "an explicit armor wins");
+  assert.match(call("weapon_build", { weapon: "Soma Prime", target: { faction: "Grineer", level: 100 } }).error, /named enemy/);
+  assert.match(call("weapon_build", { weapon: "Soma Prime", target: { nope: 1 } }).error, /Unknown target field/);
+  assert.equal(call("list_enemies", { query: "Heavy Gunner", level: 150, limit: 1 }).results["Heavy Gunner"].armor_at_level, 2700);
+  assert.equal(call("suggest_weapon_build", { weapon: "Soma Prime", target: { enemy: "Heavy Gunner", level: 150 } }).build.target.armor, 2700);
+});
+
+test("lookups understand how people shorten names", () => {
+  assert.equal(call("weapon_build", { weapon: "Bramma" }).weapon, "Kuva Bramma");
+  assert.equal(call("weapon_build", { weapon: "ramma" }).error?.startsWith("Unknown weapon"), true);
+  assert.match(call("weapon_build", { weapon: "Prime" }).error, /matches several/);
+  assert.equal(call("weapon_build", { weapon: "Torid Incarnon" }).attack, "Incarnon Form");
+  assert.equal(call("weapon_build", { weapon: "Felarx", attack: "Incarnon" }).attack, "Incarnon Form");
+  assert.equal(call("suggest_weapon_build", { weapon: "Torid Incarnon" }).build.attack, "Incarnon Form");
+  assert.equal(call("weapon_build", { weapon: "Soma Prime", target: { faction: "Murmur" } }).target.faction, "The Murmur");
+  assert.equal(call("weapon_build", { weapon: "Skana", mods: ["CO"] }).mod_capacity.drains[0].mod, "Condition Overload");
+  assert.match(call("warframe_build", { warframe: "Saryn", mods: ["Serration"] }).error, /Serration is a primary mod/);
+  assert.match(call("weapon_build", { weapon: "Soma Prime", riven: { effects: { "critical chance": 100 } } }).error, /Use: .*critChance/);
+  assert.match(call("weapon_build", { weapon: "Soma Prime", extra_effects: { strength: 50 } }).error, /Use: .*damage/);
+  assert.equal(call("suggest_warframe_build", { warframe: "Mesa", goal: "survivability" }).goal, "effective_health");
+  assert.ok(call("suggest_warframe_build", { warframe: "Wisp", targets: { ability_strength: 130 } }).build.abilities.strength >= 130);
+  assert.match(call("suggest_warframe_build", { warframe: "Saryn" }).error, /explore_synergies/);
+  assert.equal(call("suggest_weapon_build", { weapon: "Soma Prime", goal: "dps" }).goal, "sustained_dps");
+  assert.equal(call("suggest_weapon_build", { weapon: "Soma Prime", goal: "status" }).goal, "status_dps");
+});
+
+test("build problems are at the top of a result, and lists stay short", () => {
+  const twice = call("weapon_build", { weapon: "Soma Prime", mods: ["Serration", "Serration"] });
+  assert.equal(Object.keys(twice)[0], "warnings");
+  assert.match(twice.warnings[0], /cannot be equipped together/);
+  assert.equal(Object.keys(call("warframe_build", { warframe: "Saryn", mods: ["Intensify", "Umbral Intensify"] }))[0], "warnings");
+  const rifles = call("list_weapons", { type: "Rifle" });
+  assert.ok(JSON.stringify(rifles).length < 6000);
+  assert.ok(call("list_weapons", { query: "Soma Prime" }).results["Soma Prime"].modes, "a close match has everything");
+  assert.ok(!call("list_warframes", { query: "" }).results.Saryn?.abilityText);
+  const [init] = session({ method: "initialize", params: { protocolVersion: "2099-01-01" } });
+  assert.equal(init.result.protocolVersion, "2025-11-25", "never claims a version it does not know");
+});
+
+test("explore_synergies gathers text to reason from", () => {
+  const saryn = call("explore_synergies", { warframe: "Saryn", theme: "status", limit: 5 });
+  assert.match(saryn.abilities[0].text, /Corrosive/);
+  assert.ok(saryn.passive);
+  assert.ok(saryn.augments.some((m) => m.name === "Contagion Cloud"));
+  assert.ok(saryn.augments.every((m) => m.text?.length || m.effects));
+  assert.equal(saryn.matching_mods.length, 5);
+  assert.ok(saryn.matching_arcanes.every((a) => ["warframe", "arcane"].includes(a.type)));
+  assert.ok(saryn.damage_types_in_abilities.includes("viral"));
+  assert.equal(call("explore_synergies", { warframe: "Saryn Prime" }).augments.length, saryn.augments.length, "Primes share augments");
+  const gun = call("explore_synergies", { weapon: "Torid", theme: "status" });
+  assert.equal(gun.kind, "primary");
+  assert.ok(gun.matching_arcanes.every((a) => a.type === "primary"));
+  assert.ok(call("explore_synergies", { weapon: "Nikana Prime", theme: "heavy" }).stances.length > 0);
+  assert.match(call("explore_synergies", {}).error, /Pass warframe/);
+  assert.match(call("explore_synergies", { warframe: "Saryn", weapon: "Soma" }).error, /Pass warframe/);
+  for (const subject of [{ warframe: "Carrier Prime" }, { warframe: "Itzal" }, { warframe: "Voidrig" }, { zaw: { strike: "Balla", grip: "Korb", link: "Jai" } }]) {
+    assert.ok(!call("explore_synergies", subject).error, JSON.stringify(subject));
+  }
+});
+
+test("the profile changes suggestions, survives restarts and hides the token", () => {
+  const start = call("get_profile", {});
+  assert.equal(start.mods_mode, "assume_all");
+  assert.equal(start.alecaframe_connected, false);
+  const before = call("suggest_warframe_build", { warframe: "Saryn", goal: "strength" });
+  assert.ok(before.mods.some((m) => m.name === "Blind Rage"));
+  const updated = call("update_profile", { add_missing_mods: ["blind rage", "Serration"], alecaframe_public_token: "secret-token", notes: "Likes Saryn" });
+  assert.deepEqual(updated.missing_mods, ["Blind Rage", "Serration"]);
+  assert.equal(updated.alecaframe_connected, true);
+  assert.ok(!JSON.stringify(updated).includes("secret-token"));
+  assert.ok(!JSON.stringify(call("get_profile", {})).includes("secret-token"));
+  const after = call("suggest_warframe_build", { warframe: "Saryn", goal: "strength" });
+  assert.ok(!after.mods.some((m) => m.name === "Blind Rage"));
+  assert.equal(after.profile_applied.mods_marked_missing, 1, "only the mods for this kind of item");
+  assert.ok(call("suggest_warframe_build", { warframe: "Saryn", goal: "strength", use_profile: false }).mods.some((m) => m.name === "Blind Rage"));
+  assert.ok(!call("suggest_weapon_build", { weapon: "Soma Prime" }).mods.some((m) => m.name === "Serration"));
+  call("update_profile", { add_owned_mods: ["Serration", "Vital Sense"], mods_mode: "owned_only" });
+  const limited = call("suggest_weapon_build", { weapon: "Soma Prime" });
+  assert.deepEqual(limited.mods.map((m) => m.name).sort(), ["Serration", "Vital Sense"]);
+  assert.ok(call("explore_synergies", { weapon: "Soma Prime" }).matching_mods.every((m) => ["Serration", "Vital Sense"].includes(m.name)));
+  assert.match(call("update_profile", { add_owned_mods: ["Not A Mod"] }).error, /Unknown mod/);
+  assert.match(call("update_profile", { rivens: { Soma: { effects: { nonsense: 1 } } } }).error, /Unknown Riven effect/);
+  assert.equal(call("update_profile", { rivens: { "Soma Prime": { effects: { critChance: 100 } } } }).rivens["Soma Prime"].effects.critChance, 100);
+  assert.equal(statSync(join(home, "profile.json")).mode & 0o777, process.platform === "win32" ? statSync(join(home, "profile.json")).mode & 0o777 : 0o600);
+
+  assert.match(call("save_build", { name: "x", tool: "weapon_build", arguments: { weapon: "Nope" } }).error, /Unknown weapon/);
+  assert.equal(call("save_build", { name: "Soma", tool: "weapon_build", arguments: { weapon: "Soma Prime", mods: ["Serration"] }, notes: "n" }).saved, "Soma");
+  assert.equal(call("get_profile", {}).saved_builds.Soma.notes, "n");
+  assert.match(call("delete_saved_build", { name: "Nope" }).error, /No saved build/);
+  assert.equal(call("delete_saved_build", { name: "Soma" }).deleted, "Soma");
+
+  writeFileSync(join(home, "profile.json"), "{ not json");
+  assert.match(call("get_profile", {}).error, /not valid JSON/);
+  assert.match(call("update_profile", { notes: "x" }).error, /not valid JSON/);
+  assert.equal(readFileSync(join(home, "profile.json"), "utf8"), "{ not json", "a damaged file is left alone");
+  rmSync(join(home, "profile.json"));
+});
+
+test("network tools say plainly when they are off or not set up", () => {
+  assert.match(call("market_price", { item: "Serration" }).error, /OFFLINE/);
+  assert.match(call("sell_advice", {}).error, /Nothing to check/);
+  assert.match(call("alecaframe_account", {}).error, /not connected/);
+});
+
+test("AlecaFrame's documented relic format is read correctly", async () => {
+  const { parseRelicInventory } = await import("./lib/alecaframe.mjs");
+  const buffer = Buffer.alloc(4 + 18);
+  buffer.writeUInt32LE(2, 0);
+  buffer[4] = 0; buffer[5] = 3; buffer.write("L1\0", 6, "latin1"); buffer.writeUInt32LE(7, 9);
+  buffer[13] = 3; buffer[14] = 0; buffer.write("B21", 15, "latin1"); buffer.writeUInt32LE(1, 18);
+  assert.deepEqual(parseRelicInventory(buffer), [
+    { relic: "Lith L1", refinement: "Radiant", count: 7 },
+    { relic: "Axi B21", refinement: "Intact", count: 1 },
+  ]);
+  assert.throws(() => parseRelicInventory(Buffer.alloc(2)), /too short/);
+  const lying = Buffer.alloc(4);
+  lying.writeUInt32LE(5, 0);
+  assert.throws(() => parseRelicInventory(lying), /shorter than/);
+});
+
+test("only sane, newer game data replaces what is bundled", async () => {
+  const { acceptDownload, newerVersion } = await import("./lib/update.mjs");
+  const { data } = await import("./lib/data.mjs");
+  const newer = { ...data, meta: { ...data.meta, imported: "2999-01-01" } };
+  assert.equal(acceptDownload(newer), true);
+  assert.equal(acceptDownload(data), false, "not newer");
+  assert.equal(acceptDownload({ ...newer, meta: { ...newer.meta, format: 999 } }), false, "code can't read it");
+  assert.equal(acceptDownload({ ...newer, weapons: {} }), false, "damaged");
+  assert.equal(acceptDownload(null), false);
+  assert.equal(newerVersion("1.10.0", "1.9.0"), true);
+  assert.equal(newerVersion("1.1.0", "1.1.0"), false);
+
+  writeFileSync(join(home, "data.json"), JSON.stringify({ ...newer, meta: { ...newer.meta, sources: ["a test"] } }));
+  assert.equal(call("data_info", {}).data, "imported 2999-01-01");
+  writeFileSync(join(home, "data.json"), "{ damaged");
+  assert.equal(call("data_info", {}).data, `imported ${data.meta.imported}`);
+  rmSync(join(home, "data.json"));
+});
+
+test("every package states the same version", () => {
+  const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")).version;
+  const version = read("./package.json");
+  assert.equal(read("./manifest.json"), version);
+  assert.equal(read("./.claude-plugin/plugin.json"), version);
+});
+
+test("what the trial builds exposed stays fixed", () => {
+  // A mod that began in Conclave but works everywhere must be usable.
+  assert.ok(!call("warframe_build", { warframe: "Mesa", exilus: "Mesa's Waltz" }).warnings.some((w) => /Conclave/.test(w)));
+  assert.ok(call("explore_synergies", { warframe: "Mesa" }).augments.some((m) => m.name === "Mesa's Waltz"));
+
+  // Exalted weapons are linked, and ability scaling is there to reason from.
+  const mesa = call("explore_synergies", { warframe: "Mesa Prime", theme: "tank peacemaker" });
+  assert.deepEqual(mesa.exalted_weapons, ["Regulators Prime"]);
+  assert.ok(call("explore_synergies", { warframe: "Khora" }).exalted_weapons.includes("Whipclaw"));
+  const saryn = call("explore_synergies", { warframe: "Saryn", theme: "spore nuke" });
+  assert.match(saryn.abilities[0].scaling.strength, /initial damage/);
+  assert.ok(!saryn.passive.includes("#"));
+
+  // Ranking puts what raises the stat first, and off-topic text last.
+  const strength = call("explore_synergies", { warframe: "Saryn", theme: "strength", limit: 8 }).matching_mods.map((m) => m.name);
+  assert.ok(strength.includes("Intensify") && strength.includes("Blind Rage"));
+  assert.ok(!strength.includes("Motus Signal"));
+  assert.ok(!call("explore_synergies", { weapon: "Torid", theme: "status" }).matching_arcanes.some((a) => a.text.join(" ").includes("chance to resist")));
+
+  // Mods the game wouldn't accept can't inflate a result.
+  const clean = call("weapon_build", { weapon: "Nikana Prime", mods: ["Pressure Point"] });
+  const wrong = call("weapon_build", { weapon: "Nikana Prime", mods: ["Pressure Point", "Point Blank", "Serration"] });
+  assert.equal(wrong.damage_per_shot, clean.damage_per_shot);
+  assert.deepEqual(wrong.ignored_mods.map((m) => m.mod), ["Point Blank", "Serration"]);
+  assert.equal(wrong.mod_capacity.used, clean.mod_capacity.used);
+  assert.match(wrong.warnings.join(" "), /left out of these numbers/);
+  assert.equal(call("warframe_build", { warframe: "Saryn", mods: ["Mesa's Waltz"] }).ignored_mods[0].mod, "Mesa's Waltz");
+
+  // A limited list explains itself.
+  const limited = call("suggest_weapon_build", { weapon: "Nikana Prime", only_mods: ["Pressure Point", "True Steel", "Point Blank", "Serration"], use_profile: false });
+  assert.deepEqual(limited.mods.map((m) => m.name).sort(), ["Pressure Point", "True Steel"]);
+  assert.deepEqual(limited.only_mods_not_usable.sort(), ["Point Blank", "Serration"]);
+  assert.equal(limited.empty_slots, 6);
+  assert.match(call("suggest_weapon_build", { weapon: "Soma Prime", only_mods: ["Not A Mod"] }).error, /Unknown mod/);
+  assert.equal(call("suggest_weapon_build", { weapon: "Skana", only_mods: ["CO"], status_types_on_target: 2 }).mods[0].name, "Condition Overload");
+  assert.match(call("suggest_weapon_build", { weapon: "Nikana Prime" }).assumptions, /combo_multiplier: 12/);
+
+  // Incarnon Forms aren't judged on ammo the sources don't have.
+  const torid = call("suggest_weapon_build", { weapon: "Torid Incarnon" });
+  assert.equal(torid.goal, "burst_dps");
+  assert.match(torid.build.assumptions, /Incarnon Forms have their own ammo/);
+
+  // Armor strip, unarmored enemies and spawn levels.
+  assert.equal(call("weapon_build", { weapon: "Soma Prime", target: { armor: 1000, armor_strip: 50 } }).target.armor, 500);
+  assert.match(call("weapon_build", { weapon: "Soma Prime", target: { armor: 1, armor_strip: 101 } }).error, /armor_strip/);
+  assert.equal(call("weapon_build", { weapon: "Soma Prime", target: "Crewman" }).target.armor, 0);
+
+  // Searches ignore punctuation, as lookups do.
+  assert.ok(call("search_mods", { query: "hells chamber" }).total >= 1);
+  assert.ok(call("list_weapons", { query: "Kuva-Bramma" }).total >= 1);
+});
+
+test("special property names can't slip through", () => {
+  assert.match(call("data_info", { constructor: 1 }).error, /Unknown argument/);
+  assert.match(call("save_build", { name: "__proto__", tool: "weapon_build", arguments: { weapon: "Soma Prime" } }).error, /can't be used/);
+  assert.match(call("update_profile", { spare_items: JSON.parse('{"__proto__": 1}') }).error, /can't be used/);
+  assert.match(call("suggest_warframe_build", { warframe: "Saryn", targets: JSON.parse('{"__proto__": 100}') }).error, /Unknown stat/);
+  assert.ok(!call("explore_synergies", { warframe: "Saryn", theme: "constructor" }).error);
+  assert.match(call("save_build", { name: "x", tool: "weapon_build", arguments: { weapon: "Soma Prime", modz: [] } }).error, /Unknown argument/);
+  rmSync(join(home, "profile.json"), { force: true });
+});
+
+test("a saved nickname still warns before selling", async () => {
+  const { usedInSavedBuilds } = await import("./lib/profile.mjs");
+  const profile = { saved_builds: { Skana: { arguments: { mods: ["CO"] } } } };
+  assert.deepEqual(usedInSavedBuilds(profile, "Condition Overload"), ["Skana"]);
+});
+
+test("the process ends soon after the client goes away", () => {
+  const started = Date.now();
+  const { status } = spawnSync(process.execPath, [server], { input: `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} })}\n`, env: process.env });
+  assert.equal(status, 0);
+  assert.ok(Date.now() - started < 3000);
+});

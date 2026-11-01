@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Regenerates data.json from WFCD warframe-items, plus the Warframe wiki for rank 30 stats.
 import { writeFileSync } from "node:fs";
-import { parseLuaAfter } from "./lua.mjs";
+import { parseLua, parseLuaAfter } from "./lua.mjs";
 
 const WFCD = "https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json";
 const WIKI = "https://wiki.warframe.com/w/Module:Warframes/data?action=raw";
@@ -64,6 +64,7 @@ function parseWikiWarframes(lua) {
     frames[name] = {
       health: num("HealthRank30"), shields: num("ShieldRank30"),
       energy: num("EnergyRank30"), armor: num("ArmorRank30"),
+      passive: body.match(/^\t\t\tPassive = "((?:[^"\\]|\\.)*)"/m)?.[1],
     };
   }
   return frames;
@@ -89,6 +90,7 @@ function importWarframes(items, wiki) {
       polarities: (w.polarities ?? []).filter((polarity) => polarity !== "aura"),
       mastery: w.masteryReq ?? 0,
       abilities: (w.abilities ?? []).map((a) => a.name),
+      ...abilityText(w),
     };
   }
   return { frames, counts };
@@ -498,6 +500,7 @@ function importOtherFrames(items, kind) {
       polarities: (f.polarities ?? []).filter((polarity) => polarity !== "aura"),
       mastery: f.masteryReq ?? 0,
       abilities: (f.abilities ?? []).map((a) => a.name),
+      ...abilityText(f),
     };
   }
   return frames;
@@ -595,10 +598,135 @@ function importModular(lua) {
   };
 }
 
+// Game text marks damage types with tags such as <DT_CORROSIVE_COLOR>, and scaling values with |DURATION|.
+const cleanText = (text) => String(text ?? "").replace(/<DT_(\w+?)_COLOR>/g, "").replace(/<[^>]+>/g, "").replace(/\|\w+\|/g, "#").replace(/\s+/g, " ").trim();
+
+function abilityText(frame) {
+  return {
+    ...(frame.passiveDescription && { passive: cleanText(frame.passiveDescription) }),
+    ...(frame.abilities?.length && { abilityText: frame.abilities.map((a) => ({ name: a.name, text: cleanText(a.description) })) }),
+  };
+}
+
+// Mods with no parsed stats can still say what they do, in their game description.
+function addDescriptions(modTables, items) {
+  const byName = new Map(items.map((item) => [item.name, item]));
+  for (const table of modTables) {
+    for (const [name, mod] of Object.entries(table)) {
+      const text = cleanText(byName.get(name)?.description);
+      if (text && !Object.keys(mod.effects).length && !mod.other?.length && !mod.conditional?.length) mod.other = [text];
+    }
+  }
+}
+
+const ENEMY_FACTIONS = { Infestation: "Infested", Infested: "Infested", Corrupted: "Orokin", Sentients: "Sentient", Murmur: "The Murmur" };
+
+// The wiki keeps one enemy table per faction.
+function importEnemies(sources, factions) {
+  const enemies = {};
+  for (const lua of sources) {
+    for (const entry of Object.values(parseLua(lua, lua.indexOf("{")))) {
+      const { General: general, Stats: stats } = entry;
+      if (!general?.Name || !stats || typeof stats.BaseLevel !== "number" || enemies[general.Name]) continue;
+      const faction = ENEMY_FACTIONS[general.Faction] ?? general.Faction;
+      enemies[general.Name] = {
+        ...(factions[faction] && { faction }),
+        ...(general.Type && { type: general.Type }),
+        armor: stats.Armor ?? 0, // the wiki leaves it out for unarmored enemies
+        baseLevel: stats.BaseLevel,
+        ...(typeof stats.SpawnLevel === "number" && { spawnLevel: stats.SpawnLevel }),
+        ...(typeof stats.Health === "number" && { health: stats.Health }),
+        ...(typeof stats.Shield === "number" && { shields: stats.Shield }),
+      };
+    }
+  }
+  return enemies;
+}
+
+// Runs a few at a time, as these all go to the wiki.
+async function mapLimit(items, limit, run) {
+  const results = [];
+  let next = 0;
+  await Promise.all(Array.from({ length: limit }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await run(items[i]);
+    }
+  }));
+  return results;
+}
+
+// One retry after a pause, as the wiki can briefly refuse a burst of requests.
+async function wikiPage(name) {
+  const url = `https://wiki.warframe.com/w/${encodeURIComponent(name.replace(/ /g, "_"))}?action=raw`;
+  for (const pause of [0, 3000, 10000]) {
+    await new Promise((resolve) => { setTimeout(resolve, pause); });
+    try {
+      return await fetchText(url);
+    } catch {
+      // Tries again, or returns nothing below.
+    }
+  }
+  return "";
+}
+
+// Wiki markup down to plain text, keeping only the top rank of values such as "6 / 8 / 8 / 10".
+function wikiText(text) {
+  return text
+    .replace(/<br\s*\/?>/g, "; ").replace(/<[^>]+>/g, "")
+    .replace(/\{\{(?:D|A|WF|M|Stat|Weapon|E|Tooltip)\|([^|}]+)[^}]*\}\}/g, "$1")
+    .replace(/\{\{[^}]*\}\}/g, "").replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1").replace(/'{2,}/g, "")
+    .replace(/&infin;/g, "unlimited").replace(/&[a-z]+;/g, " ")
+    .replace(/(?:[+-]?[\d.]+%?(?:\s?(?:m|s))?\s*\/\s*)+([+-]?[\d.]+)/g, "$1")
+    .replace(/\s+/g, " ").replace(/(;\s*)+$/, "").trim();
+}
+
+const SCALING_FIELDS = ["strength", "duration", "range", "misc"];
+
+// What each ability scales with, from the parameters on its wiki page. A page that can't be read just goes without.
+async function importAbilityDetails(moduleLua) {
+  const table = parseLuaAfter(moduleLua, "\n\tAbility = ");
+  const entries = Object.values(table).filter((entry) => entry.Powersuit && entry.Name);
+  const pages = await mapLimit(entries, 4, async (entry) => wikiPage(entry.Link ?? entry.Name));
+  console.log(`Ability pages read: ${pages.filter(Boolean).length} of ${entries.length}.`);
+  const details = {};
+  entries.forEach((entry, i) => {
+    const field = (name) => {
+      const match = pages[i].match(new RegExp(`^\\|\\s*${name}\\s*=\\s*([\\s\\S]*?)(?=^\\s*\\||^\\}\\})`, "m"));
+      const text = match ? wikiText(match[1]) : "";
+      return text && !/^(n\/a|none)$/i.test(text) ? text : undefined;
+    };
+    const scaling = Object.fromEntries(SCALING_FIELDS.map((name) => [name, field(name)]).filter(([, value]) => value));
+    const weapon = typeof entry.Weapon === "string" ? entry.Weapon.replace(/ \(.*\)$/, "") : undefined;
+    (details[entry.Powersuit] ??= {})[entry.Name.toLowerCase()] = {
+      ...(typeof entry.Cost === "number" && { cost: entry.Cost }),
+      ...(entry.IsChanneled && { channeled: true }),
+      ...(weapon && { weapon }),
+      ...(Object.keys(scaling).length && { scaling }),
+    };
+  });
+  return details;
+}
+
+// WFCD marks every mod that began in Conclave as PvP, though the wiki says some were later opened up to all missions.
+async function reopenPveMods(modTables) {
+  const flagged = modTables.flatMap((table) => Object.entries(table).filter(([, mod]) => mod.pvpOnly));
+  const opened = [];
+  await mapLimit(flagged, 4, async ([name, mod]) => {
+    // A page that can't be read stays flagged, which only means the mod isn't suggested.
+    if (/usable in both PvE|available in PvE|in both PvE and|PvE and \[*Conclave/i.test(await wikiPage(name))) {
+      delete mod.pvpOnly;
+      opened.push(name);
+    }
+  });
+  return opened;
+}
+
 function check(condition, message) {
   if (!condition) throw new Error(`Sanity check failed: ${message}. The source format may have changed; data.json was not written.`);
 }
 
+const ENEMY_MODULES = ["grineer", "corpus", "infestation", "orokin", "sentient", "stalker", "narmer", "themurmur", "techrot", "scaldra", "anarchs", "unaffiliated"];
 const [
   warframes, primary, secondary, melee, mods, arcaneItems, archwingItems, sentinelItems, petItems,
   wikiLua, wikiPrimary, wikiSecondary, wikiMelee, wikiArchwing, wikiCompanion, wikiModsLua, wikiStances, wikiDamage, wikiModular,
@@ -616,6 +744,8 @@ const [
   fetchText(WIKI_MODULE("DamageTypes/data")),
   fetchText(WIKI_MODULE("Modular/data")),
 ]);
+const wikiAbilities = await fetchText(WIKI_MODULE("Ability/data"));
+const wikiEnemies = await Promise.all(ENEMY_MODULES.map((name) => fetchText(WIKI_MODULE(`Enemies/data/${name}`))));
 
 const wiki = parseWikiWarframes(wikiLua);
 const { frames, counts } = importWarframes(warframes, wiki);
@@ -634,10 +764,20 @@ check(Object.keys(weapons).length >= 650, "too few weapons");
 const stances = importStances(wikiStances);
 const factions = importFactions(wikiDamage);
 const modular = importModular(wikiModular);
+const enemies = importEnemies(wikiEnemies, factions);
+addDescriptions([warframeMods, weaponMods], mods);
 const arcanes = importArcanes(arcaneItems);
 const companions = importOtherFrames(sentinelItems.concat(petItems), "companion");
 const archwings = importOtherFrames(archwingItems, "archwing");
 const necramechs = importOtherFrames(warframes.filter((w) => w.type === "Necramech"), "necramech");
+const reopened = await reopenPveMods([warframeMods, weaponMods]);
+const abilityDetails = await importAbilityDetails(wikiAbilities);
+for (const frame of [...Object.entries(frames), ...Object.entries(archwings), ...Object.entries(necramechs)]) {
+  const details = abilityDetails[frame[0].replace(/ (Prime|Umbra)$/, "")];
+  const wikiPassive = (wiki[frame[0]] ?? wiki[frame[0].replace(/ (Prime|Umbra)$/, "")])?.passive;
+  if (wikiPassive) frame[1].passive = wikiPassive;
+  for (const ability of frame[1].abilityText ?? []) Object.assign(ability, details?.[ability.name.toLowerCase()]);
+}
 check(frames.Jade?.auraPolarity === "universal" && frames.Jade.secondAuraPolarity === "vazarin", "Jade's aura slots");
 check(weapons["Boar Prime"]?.modes.find((m) => m.name === "Incarnon Form")?.pellets === 1, "pellets per attack");
 check(weapons.Ogris?.modes[1].aoe && weapons.Kohm?.modes[0].pellets === 12, "attack details");
@@ -665,6 +805,13 @@ check(weaponMods.Serration?.effects.damage === 165, "Serration");
 check(weaponMods.Hellfire?.effects.heat === 90, "Hellfire picked the wrong variant");
 check(weapons["Tigris Prime"]?.pellets === 8, "Tigris Prime pellets");
 check(Object.keys(wikiWeapons).length >= 300, "too few wiki weapons");
+check(Object.keys(enemies).length >= 500, "too few enemies");
+check(enemies.Crewman?.armor === 0 && enemies.Crewman.shields > 0, "unarmored enemies");
+check(warframeMods["Mesa's Waltz"] && !warframeMods["Mesa's Waltz"].pvpOnly, "Conclave mods opened to PvE");
+check(frames.Saryn.abilityText[0].scaling?.strength?.includes("initial damage"), "ability scaling");
+check(frames.Mesa.abilityText.some((a) => a.weapon === "Regulators") && frames.Khora.abilityText.some((a) => a.weapon === "Whipclaw"), "Exalted links");
+check(enemies["Heavy Gunner"]?.armor === 500 && enemies["Heavy Gunner"].baseLevel === 8 && enemies["Heavy Gunner"].faction === "Grineer", "Heavy Gunner");
+check(frames.Saryn?.abilityText?.[0].text.includes("Corrosive") && frames.Saryn.passive, "ability text");
 check(weapons.Lanka?.modes[0].name === "Charged Shot" && weapons.Lanka.modes[0].fireRate === 1, "Lanka charge rate");
 check(warframeMods["Quick Thinking"]?.maxRank === 5 && warframeMods["Quick Thinking"]?.baseDrain === 10, "Quick Thinking rank table");
 check(warframeMods["Primed Flow"]?.incompatible?.includes("Flow"), "Primed Flow conflicts");
@@ -684,6 +831,7 @@ check(weaponMods["Crimson Dervish"]?.stance && weaponMods["Crimson Dervish"]?.ba
 
 const data = {
   meta: {
+    format: 2, // raised when code must change to read the data
     imported: new Date().toISOString().slice(0, 10),
     sources: ["WFCD/warframe-items (MIT)", "wiki.warframe.com data modules"],
     note: "Warframe game data belongs to Digital Extremes. Regenerate with npm run import-data.",
@@ -698,11 +846,13 @@ const data = {
   arcanes,
   stances,
   factions,
+  enemies,
   modular,
   heavyMultipliers: HEAVY_MULTIPLIERS,
 };
 writeFileSync(OUTPUT, `${JSON.stringify(data, null, 1)}\n`);
 
+console.log(`Enemies: ${Object.keys(enemies).length}. Conclave mods opened to PvE: ${reopened.length} (${reopened.join(", ")}).`);
 console.log(`Warframes: ${Object.keys(frames).length} (rank 30 from wiki ${counts.wiki}, base frame ${counts.baseFrame}, default rule ${counts.defaultRule})`);
 console.log(`Weapons: ${Object.keys(weapons).length} (${Object.values(weapons).filter((w) => w.slot === "melee").length} melee, ${Object.values(weapons).filter((w) => w.heavyUnconfirmed).length} with unconfirmed heavy attacks)`);
 console.log(`Mods: ${Object.keys(warframeMods).length} Warframe, ${Object.keys(weaponMods).length} weapon, ${nonLinear} with exact per-rank values`);

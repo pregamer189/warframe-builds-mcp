@@ -1,51 +1,46 @@
 # warframe-builds-mcp
 
-An [MCP](https://modelcontextprotocol.io) server that lets an AI assistant calculate and suggest Warframe builds. Ask things like "what's the best Soma Prime build against Grineer?" or "get Saryn to 175% efficiency with as much strength as possible", and it answers with real game data and shows its numbers.
-
-It needs Node 18 or newer and has no other dependencies. It runs on your computer and makes no network calls.
+A Warframe builder companion for Claude and other AI assistants. Ask for "a spore nuker Saryn", "the best Soma Prime for level 150 Heavy Gunners on Steel Path", "a build from the mods I own" or "what should I sell?", and it works from real game data and shows its numbers. It's free and open source, and runs on your computer.
 
 ## Install
 
-**Claude Code**
+Paste this into Claude Code, Cursor or another assistant that can run commands:
 
-```bash
-claude mcp add --scope user warframe-builds -- npx -y github:pregamer189/warframe-builds-mcp
+```text
+Install the Warframe Builds MCP server for me by following https://github.com/pregamer189/warframe-builds-mcp/blob/main/INSTALL.md
 ```
 
-**Claude Desktop, Cursor and other MCP clients.** Add this to the client's MCP config:
+**In normal Claude Desktop chat**, which can't install things itself: download [warframe-builds.mcpb](https://github.com/pregamer189/warframe-builds-mcp/releases/latest/download/warframe-builds.mcpb) and double-click it. You don't need to install Node.
 
-```json
-{
-  "mcpServers": {
-    "warframe-builds": {
-      "command": "npx",
-      "args": ["-y", "github:pregamer189/warframe-builds-mcp"]
-    }
-  }
-}
-```
+[INSTALL.md](INSTALL.md) has every route, including how to install by hand. Phones and claude.ai on the web aren't supported, because the server runs on your computer.
 
-**From a local copy**
+## What it does
 
-```bash
-git clone https://github.com/pregamer189/warframe-builds-mcp.git
-```
-
-Then point your client at `node /path/to/warframe-builds-mcp/server.mjs`.
+- **Builds from synergies.** `explore_synergies` hands the assistant the ability text, augments, and fitting mods and arcanes for anything in the game data, including new items. The assistant reasons about combinations, then checks each one. The included skill teaches it this routine.
+- **Calculators.** Damage by type, crit, status, damage over time, DPS, capacity, Warframe stats and effective health. Enemies scale with level and Steel Path.
+- **Mod suggestions.** The most damage for a named enemy, or minimums such as 175% efficiency with as much strength as possible, including where to put Forma.
+- **Your account.** A local profile holds the mods you have or lack, your Rivens, spare items and saved builds, and suggestions respect it.
+- **Selling.** Live prices and recent sales from warframe.market, with a warning before you sell a mod a saved build uses.
+- **AlecaFrame.** Optional currencies, trades and relics, using a public token you create.
 
 ## Tools
 
 | Tool | What it does |
 | --- | --- |
+| `explore_synergies` | Gathers ability text, augments and matching mods and arcanes for a theme |
 | `suggest_weapon_build` | Picks the mods that do the most damage to the enemy you name, within capacity, polarities and conflicts. It can also plan Forma |
 | `suggest_warframe_build` | Picks mods towards a goal such as strength or effective health, or minimums such as 175% efficiency |
-| `weapon_build` | Works out a weapon, Zaw or Kitgun build: damage by type, crit, status, damage over time, DPS and capacity. Melee adds range, heavy attacks and per-combo stance DPS |
-| `warframe_build` | Works out a Warframe, companion, Archwing or Necramech build: stats, ability stats, effective health and capacity |
-| `list_weapons`, `list_warframes`, `list_modular_parts` | Find weapons, frames, and Zaw and Kitgun parts |
+| `weapon_build` | Works out a weapon, Zaw or Kitgun build. Melee adds range, heavy attacks and per-combo stance DPS |
+| `warframe_build` | Works out a Warframe, companion, Archwing or Necramech build |
+| `get_profile`, `update_profile` | Show and change your saved mods, items, Rivens and notes |
+| `save_build`, `delete_saved_build` | Keep the builds you like |
+| `market_price`, `sell_advice` | Live prices, and what to sell first |
+| `alecaframe_account` | Your AlecaFrame currencies, trades and relics |
+| `list_weapons`, `list_warframes`, `list_enemies`, `list_modular_parts` | Find weapons, frames, enemies, and Zaw and Kitgun parts |
 | `search_mods`, `search_arcanes` | Find mods and arcanes by name or effect |
-| `data_info` | Shows the version, the data's import date, coverage and limits |
+| `data_info` | Shows the version, data date, coverage and limits |
 
-Names forgive case, punctuation and typos. Build results warn about mod conflicts, the wrong weapon class, PvP-only mods and going over capacity, and they list anything the calculator could not include under `not_calculated`.
+Names forgive case, punctuation and partial names such as "Bramma", and typos get suggestions. Results put problems such as mod conflicts or going over capacity first, and list anything the calculator could not include under `not_calculated`.
 
 ### Example
 
@@ -56,7 +51,7 @@ Names forgive case, punctuation and typos. Build results warn about mod conflict
   "riven": { "effects": { "critChance": 120, "multishot": 90 }, "polarity": "madurai" },
   "arcanes": ["Primary Merciless"],
   "conditionals": true,
-  "target": { "faction": "Grineer", "armor": 500 }
+  "target": { "enemy": "Heavy Gunner", "level": 50, "steel_path": true }
 }
 ```
 
@@ -67,35 +62,52 @@ Build inputs also take `exilus`, `stance`, `combo_multiplier`, `status_types_on_
 - **Frames:** 119 Warframes, 32 companions, 5 Archwings and 2 Necramechs.
 - **Weapons:** 677 primaries, secondaries, melee, Exalted, Archwing and companion weapons, every Zaw and Kitgun combination, and all their attack modes.
 - **Mods:** 1,269 mods including stances, auras, Exilus and PvP-only ones, plus 168 arcanes. You enter Rivens with the stats you rolled.
-- **Damage:** elements and combinations in mod order, crit, multishot, status procs, damage over time, enemy armor, faction damage, faction mods, heavy attacks, combo scaling and stance combos.
+- **Enemies:** 997, with armor, health and base level.
+
+## Your data and the network
+
+Your profile stays in `.warframe-builds` in your home folder, and is only readable by you on Mac and Linux. What you tell the assistant, and what tools return, goes to your AI provider like the rest of the conversation.
+
+The server contacts three places:
+
+- **GitHub**, at most once a day, for newer game data. It only downloads data and a version number, never code, and checks the data before using it.
+- **warframe.market**, when you ask for prices. It sends the item's name.
+- **AlecaFrame**, when you ask for your stats. It sends your public token.
+
+Set `WARFRAME_BUILDS_OFFLINE=1` to turn all of this off. It never reads the game or its files, and never logs in to your Warframe account. AlecaFrame's API has no owned mods or gear, so those come from what you tell the profile.
 
 ## Accuracy
 
 Formulas come from the Warframe wiki, and the tests check them against the wiki's worked examples. The data is cross-checked between WFCD and the wiki where both have it, and the import stops rather than writing data if known values stop matching.
 
-**Nothing was checked in-game**, and both sources are community maintained, so they can lag behind patches or contain mistakes. Treat the numbers as well-founded theory.
+**Nothing was checked in-game**, and both sources are community maintained, so they can lag behind patches or contain mistakes. Treat the numbers as well-founded theory. Synergy builds go further: they're the assistant's reasoning from game text, so test them in the Simulacrum.
 
 ## Limits
 
-- **Left out of damage:** weak points, shields, armor stripped by status effects, ability buffs (unless passed through `extra_effects`), status duration mods, forced procs and the game's 1/32 damage rounding.
+- **Left out of damage:** enemy health and time to kill, weak points, shields, armor stripped by status effects, ability buffs (unless passed through `extra_effects`), status duration mods, forced procs and the game's 1/32 damage rounding.
 - **Triggered effects:** Galvanized mods and arcanes only count when you set `conditionals: true`, and then always at full stacks. That makes the result a peak, not an average.
 - **Listed, not calculated:** set bonuses, most aura effects on squadmates and weapons, and other effects with no fixed number. They appear in `not_calculated`.
 - **Melee:** per-combo stance DPS ignores stance slash and status multipliers. Plain `burst_dps` ignores the stance completely.
 - **Heavy attacks:** they exclude Bleed and wind-up mods. Many multi-hit classes don't match their listed class multiplier in the sources, and those results are marked `unconfirmed`.
 - **Other frames:** companions, Archwings and Necramechs use the stats the sources list, since they publish no rank 30 rule. Necramechs have 12 slots. The tool caps the others at 12 too, as the sources don't confirm their counts, and suggests at most 8 mods for them.
 - **Exalted weapons:** Ability Strength scaling isn't included.
-- **Suggestions:** they assume you own every mod at max rank, so use `exclude` for any you don't. They only choose mods with effects the calculator can model, and they don't choose arcanes. The search is heuristic, so a better build can exist. Against brute force over each weapon's 15 strongest mods it matched in all 16 cases tested, but a wider 17-mod run found one heavy attack build 4.3% better.
+- **Enemy levels:** only armor scales here. Steel Path adds 100 levels, though Archwing and a few other modes differ.
+- **Status builds:** `status_dps` counts damage over time only, with no credit for Viral or other debuffs. Pass `armor_strip` to see stripped armor.
+- **Incarnon Forms:** their own ammo and evolution perks aren't in the sources, so trust `burst_dps` over `sustained_dps`.
+- **Suggestions:** they assume mods are at max rank, and that you own any the profile doesn't rule out. They only choose mods with effects the calculator can model, and they don't choose arcanes. The search is heuristic, so a better build can exist. Against brute force over each weapon's 15 strongest mods it matched in all 16 cases tested, but a wider 17-mod run found one heavy attack build 4.3% better.
 - **Not supported:** Railjack, Necramech melee, vehicles, amps and Operator gear.
 
 ## Game data
 
-`data.json` is generated, so don't edit it by hand. A GitHub Action refreshes it weekly when the sources change and the tests still pass. To refresh it yourself:
+`data.json` is generated, so don't edit it by hand. A GitHub Action refreshes it weekly when the sources change and the tests still pass, and installed copies download it within a day. To refresh it yourself:
 
 ```bash
 npm run import-data
 ```
 
 ## Development
+
+Installs follow the `release` branch, which CI moves forward only after every test passes on `main`. A new version in `package.json`, `manifest.json` and `.claude-plugin/plugin.json` also publishes the desktop extension.
 
 ```bash
 npm test
@@ -104,7 +116,9 @@ npm test
 | Path | Contents |
 | --- | --- |
 | `server.mjs` | MCP protocol, tool definitions and input checks |
-| `lib/` | Calculations: `weapons`, `frames`, `target` (enemies), `mods` (capacity and effects), `suggest` |
+| `lib/` | Calculations: `weapons`, `frames`, `target` (enemies), `mods` (capacity and effects), `suggest`, plus `synergy`, `profile`, `market`, `alecaframe` and `update` |
+| `skills/` | The Claude skill |
+| `manifest.json`, `.claude-plugin/`, `.mcp.json` | Desktop extension and plugin packaging |
 | `scripts/` | The data import, and a parser for the wiki's Lua tables |
 
 ## License
