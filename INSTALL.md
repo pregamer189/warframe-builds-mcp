@@ -43,7 +43,7 @@ On Windows, if the app can't start `npx`, use `"command": "cmd"` and `"args": ["
 
 Claude Code and normal Claude Desktop chats have separate settings. If `claude_desktop_config.json` exists, ask whether the person wants the builder in normal chats too. It's in `~/Library/Application Support/Claude/` on Mac and `%APPDATA%\Claude\` on Windows.
 
-If they say yes, make a backup copy of the file. Then add this under `mcpServers`, and keep everything else in the file exactly as it is. Claude Desktop doesn't load the shell's PATH, so on Mac use the full path from `which npx`, and put the folders from `which node` and `which git` in `PATH`. Windows can use the `cmd` form above without `env`.
+If they say yes, make a backup copy of the file. Then add this under `mcpServers`, creating that section if needed, and keep everything else in the file exactly as it is. Claude Desktop doesn't load the shell's PATH, so on Mac use the full path from `which npx`, and put the folders from `which node` and `which git` in `PATH`. Windows can use the `cmd` form above without `env`.
 
 ```json
 "warframe-builds": {
