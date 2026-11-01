@@ -84,6 +84,68 @@ test("Condition Overload bonuses follow each attack's measured behaviour", () =>
   assert.equal(call("weapon_build", { weapon: "Skana", attack: "Slam Attack", mods: ["Condition Overload"] }).condition_overload.behavior, "adding");
 });
 
+test("triggered effects worded in other ways still count", () => {
+  const crit = (mods, conditionals) => call("weapon_build", { weapon: "Braton", mods, conditionals }).crit_chance_pct;
+  const base = crit([], false);
+  // Galvanized Scope: +120% on a weak point hit, and +40% per weak point kill up to 5.
+  assert.equal(crit(["Galvanized Scope"], false), base);
+  assert.equal(crit(["Galvanized Scope"], true), Math.round(base * (1 + 3.2) * 100) / 100);
+  const strength = (mods, conditionals) => call("warframe_build", { warframe: "Saryn", mods, conditionals }).abilities.strength;
+  assert.equal(strength(["Archon Intensify"], true) - strength(["Archon Intensify"], false), 30);
+  const aura = (conditionals) => call("warframe_build", { warframe: "Saryn", aura: "Growing Power", conditionals }).abilities.strength;
+  assert.equal(aura(true) - aura(false), 25);
+  const vendetta = call("weapon_build", { weapon: "Strun", arcanes: ["Shotgun Vendetta"], conditionals: true });
+  assert.equal(vendetta.not_calculated.length, 0);
+  assert.ok(vendetta.pellets_or_multishot > call("weapon_build", { weapon: "Strun" }).pellets_or_multishot);
+  // An arcane's plain stat line is applied, so it isn't reported as left out.
+  const merciless = call("weapon_build", { weapon: "Braton", arcanes: ["Primary Merciless"] });
+  assert.equal(merciless.not_calculated.some((entry) => /Reload Speed/.test(entry.at_max_rank)), false);
+});
+
+test("enemy health and shields scale with level by faction", () => {
+  const close = (actual, expected) => assert.ok(Math.abs(actual / expected - 1) < 0.001, `${actual} vs ${expected}`);
+  const gunner = (spec) => call("list_enemies", { query: "Heavy Gunner", ...spec }).results["Heavy Gunner"];
+  // The wiki's Grineer curve at 142 levels above base, and Steel Path's 2.5x on top of 100 more levels.
+  close(gunner({ level: 150 }).health_at_level, 300 * (1 + 10.7332 * 142 ** 0.72));
+  close(gunner({ level: 150, steel_path: true }).health_at_level, 300 * (1 + 10.7332 * 242 ** 0.72) * 2.5);
+  const { target } = call("weapon_build", { weapon: "Braton", target: { enemy: "Heavy Gunner", level: 150 } });
+  close(target.rough_seconds_to_empty_health, target.health / target.sustained_dps);
+  assert.ok(call("list_enemies", { query: "Captain Vor", level: 50 }).results["Captain Vor"].shields_at_level > 900);
+});
+
+test("players' words for enemies and rules are understood", () => {
+  assert.ok(call("list_enemies", { faction: "Corrupted" }).total > 0);
+  assert.equal(call("weapon_build", { weapon: "Braton", target: "Corrupted" }).target.faction, "Orokin");
+  const scaled = call("weapon_build", { weapon: "Braton", target: { faction: "Grineer", level: 100 } }).error;
+  assert.match(scaled, /Tough Grineer enemies/);
+  // A rule about Sobek applies to the Kuva Sobek, and the build's own item comes first.
+  assert.ok(call("special_rules", { query: "Kuva Sobek" }).rules.some((rule) => rule.subjects.includes("Sobek")));
+  const rules = call("suggest_weapon_build", { weapon: "Stahlta", mods: ["Galvanized Aptitude"] }).special_rules;
+  assert.ok(rules[0].subjects.includes("Stahlta"));
+  assert.doesNotMatch(readFileSync(new URL("./lib/special-rules.json", import.meta.url), "utf8"), /dates\.json|Extractor/);
+});
+
+test("builds use the weapon's Exilus polarity, and say when no Exilus mod helps", () => {
+  const drain = (slot_polarity) => call("weapon_build", { weapon: "Stahlta", exilus: { name: "Ammo Drum", ...(slot_polarity && { slot_polarity }) } }).mod_capacity.drains[0].drain;
+  assert.equal(drain(), drain("naramon"));
+  assert.match(call("suggest_weapon_build", { weapon: "Stahlta", use_exilus: true }).exilus_note, /No Exilus mod/);
+  const saryn = call("suggest_warframe_build", { warframe: "Saryn Prime", goal: "strength", targets: { efficiency: 175 }, forma: 3 });
+  assert.match(saryn.low_stats_note, /duration is/);
+});
+
+test("synergy search finds triggered bonuses, and ignores the arcane revive line", () => {
+  const nuke = call("explore_synergies", { warframe: "Saryn", theme: "spores nuke", limit: 60 });
+  assert.ok(nuke.matching_arcanes.some((arcane) => arcane.name === "Molt Augmented"));
+  const tank = call("explore_synergies", { warframe: "Mesa", theme: "tank", limit: 60 });
+  assert.equal(tank.matching_arcanes.some((arcane) => arcane.name === "Arcane Pulse" && !/heal|health/i.test(arcane.text.join(" "))), false);
+  assert.ok(tank.total_matching_arcanes < 58);
+});
+
+test("attacks the wiki lists above our damage say so", () => {
+  const overload = call("weapon_build", { weapon: "Stropha", attack: "Ranged Attack" }).condition_overload;
+  assert.equal(overload.wiki_listed_damage, 2800);
+});
+
 test("Condition Overload's measured attacks use the wiki's share and notes", () => {
   const overload = (weapon, attack) => call("weapon_build", { weapon, attack }).condition_overload;
   assert.equal(overload("Vadarya Prime", "Normal Attack").behavior, "none");
@@ -567,15 +629,15 @@ test("status follows the wiki's proc and tick formulas", () => {
   });
   assert.equal(supra.status.by_type.heat.tick_damage, 32.8);
   // Its proc share follows damage: 24 of 64.
-  assert.equal(supra.status.by_type.heat.proc_chance_pct, 37.5);
+  assert.equal(supra.status.by_type.heat.share_of_procs_pct, 37.5);
   // Thermite Rounds also adds 60% status chance.
   assert.equal(supra.status.procs_per_second, 1.6);
   assert.equal(supra.status.by_type.heat.dps, round(1.6 * 0.375 * 32.8 * 6));
 
   // The wiki's proc table: 20 Impact, 5 Puncture, 10 Slash and 25 Heat out of 60.
   const shares = call("weapon_build", { weapon: "Soma Prime", base_stats: { ...GUN, damage: { impact: 20, puncture: 5, slash: 10, heat: 25 } } }).status.by_type;
-  assert.equal(shares.impact.proc_chance_pct, 33.33);
-  assert.equal(shares.heat.proc_chance_pct, 41.67);
+  assert.equal(shares.impact.share_of_procs_pct, 33.33);
+  assert.equal(shares.heat.share_of_procs_pct, 41.67);
   // Slash uses 0.35, and multishot adds procs without changing the chance per pellet.
   const slash = call("weapon_build", {
     weapon: "Soma Prime", base_stats: { ...GUN, damage: { slash: 99 }, critChance: 0, statusChance: 50, fireRate: 1, pellets: 2 },

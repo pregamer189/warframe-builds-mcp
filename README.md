@@ -105,8 +105,9 @@ These checks were done by AI reading captions, notes and wiki text, **not by tes
 
 ## Limits
 
-- **Left out of damage:** enemy health and time to kill, weak points, shields, armor stripped by status effects, ability buffs (unless passed through `extra_effects`), status duration mods, forced procs and the game's 1/32 damage rounding.
+- **Left out of damage:** weak points, shields, armor stripped by status effects, ability buffs (unless passed through `extra_effects`), status duration mods, forced procs and the game's 1/32 damage rounding.
 - **Ability numbers:** `warframe_build` lists each ability's values at your build's stats, such as Spores' starting damage. They aren't damage to an enemy, as armor, factions, stacking and the ability's own caps aren't applied. Kill speed isn't calculated.
+- **Heavy attack projectiles:** a few hit for more than the sources list, such as Stropha's. Results give the wiki's figure as `wiki_listed_damage`.
 - **Condition Overload:** Galvanized mods and similar bonuses use the wiki's measurements for each attack, Kitgun chamber and stance combo, including attacks where they multiply instead of adding. Much of this is likely unintended but long-standing, and results show which applies under `condition_overload`. A gun's radial damage gets no bonus unless measured. A few measured attacks aren't in the game data, such as Destreza's Spectral Rapiers and the Exalted Umbra Blade's waves, and base damage increases from Incarnon evolutions aren't included. Measurements on a Kitgun's one grip are assumed for its others, and untested stance combos are assumed to keep the whole bonus.
 - **Triggered effects:** Galvanized mods and arcanes only count when you set `conditionals: true`, and then always at full stacks. That makes the result a peak, not an average.
 - **Listed, not calculated:** set bonuses, most aura effects on squadmates and weapons, and other effects with no fixed number. They appear in `not_calculated`.
@@ -114,7 +115,7 @@ These checks were done by AI reading captions, notes and wiki text, **not by tes
 - **Heavy attacks:** they exclude Bleed and wind-up mods. Many multi-hit classes don't match their listed class multiplier in the sources, and those results are marked `unconfirmed`.
 - **Other frames:** companions, Archwings and Necramechs use the stats the sources list, since they publish no rank 30 rule. Necramechs have 12 slots. The tool caps the others at 12 too, as the sources don't confirm their counts, and suggests at most 8 mods for them.
 - **Exalted weapons:** Ability Strength scaling isn't included.
-- **Enemy levels:** only armor scales here. Steel Path adds 100 levels, though Archwing and a few other modes differ.
+- **Enemies:** armor, health and shields scale with level by faction, using the wiki's formulas, except for Eximus units. Steel Path adds 100 levels and multiplies health and shields by 2.5, though Archwing, Duviri and a few other modes differ. `rough_seconds_to_empty_health` is a rough comparison that leaves out shields, weak points and overkill.
 - **Status builds:** `status_dps` counts damage over time only, with no credit for Viral or other debuffs. Pass `armor_strip` to see stripped armor.
 - **Incarnon Forms:** their own ammo and evolution perks aren't in the sources, so trust `burst_dps` over `sustained_dps`.
 - **Suggestions:** they assume mods are at max rank, and that you own any the profile doesn't rule out. They only choose mods with effects the calculator can model, and they don't choose arcanes. The search is heuristic, so a better build can exist. Against brute force over each weapon's 15 strongest mods it matched in all 16 cases tested, but a wider 17-mod run found one heavy attack build 4.3% better.

@@ -323,12 +323,42 @@ function parseConditional(line, stats) {
   };
 }
 
+// "+180% Multishot and +75% Reload Speed", every part of which has to be a known stat.
+function parseEffects(text, stats) {
+  const effects = {};
+  for (const part of text.split(/,? (?:and )?(?=[+-]\d)/)) {
+    const match = part.match(/^([+-]?\d+(?:\.\d+)?)% (.+)$/);
+    if (!match || !stats[match[2]]) return undefined;
+    effects[stats[match[2]]] = Number(match[1]);
+  }
+  return effects;
+}
+
+// The other ways game text words a trigger: several stats at once, aiming alone, and sentences such as
+// "Restoring health with abilities grants +30% Ability Strength for 10s."
+function parseWordedConditional(line, stats) {
+  const seconds = (text) => { const found = text?.match(/(\d+(?:\.\d+)?)s/); return found ? { seconds: Number(found[1]) } : {}; };
+  const several = line.match(/^((?:On|When|While|After) [^:]+):\s*(.+?)(?: when Aiming)?( for \d+(?:\.\d+)?s)?\.?(?: Stacks up to (\d+)x\.?)?$/);
+  const severalEffects = several && parseEffects(several[2], stats);
+  if (severalEffects) return { trigger: several[1], effects: severalEffects, ...seconds(several[3]), stacks: Number(several[4] ?? 1), text: line };
+  const aiming = line.match(/^([+-]?\d+(?:\.\d+)?)% (.+?) when Aiming$/);
+  const aimingEffects = aiming && (aiming[2] === "Critical Chance and Damage"
+    ? { critChance: Number(aiming[1]), critDamage: Number(aiming[1]) }
+    : stats[aiming[2]] && { [stats[aiming[2]]]: Number(aiming[1]) });
+  if (aimingEffects) return { trigger: "When Aiming", effects: aimingEffects, stacks: 1, text: line };
+  const grants = line.match(/^(.+?) grants? \+(\d+(?:\.\d+)?)% (.+?)( for \d+(?:\.\d+)?s)?\.?$/);
+  if (grants && stats[grants[3]]) return { trigger: grants[1], effects: { [stats[grants[3]]]: Number(grants[2]) }, ...seconds(grants[4]), stacks: 1, text: line };
+  const personal = line.match(/^(On [^:]+): Squad increases personal (.+?) by (\d+(?:\.\d+)?)%( for \d+(?:\.\d+)?s)?\.?$/);
+  if (personal && stats[personal[2]]) return { trigger: personal[1], effects: { [stats[personal[2]]]: Number(personal[3]) }, ...seconds(personal[4]), stacks: 1, text: line };
+  return undefined;
+}
+
 function parseLines(lines, stats) {
   const effects = {};
   const other = [];
   const conditional = [];
-  for (const raw of lines) {
-    const line = raw.replace(/<[^>]+>/g, "").replace(/\\n/g, " ").replace(/\s+/g, " ").trim();
+  // Some mods run two triggers together: "On Weak Point Hit: ... for 12s On Weak Point Kill: ..."
+  for (const line of lines.flatMap((raw) => raw.replace(/<[^>]+>/g, "").replace(/\\n/g, " ").replace(/\s+/g, " ").trim().split(/(?<=\ds\.?) (?=On [A-Z])/))) {
     const faction = stats === WEAPON_STATS && line.match(/^x(\d+(?:\.\d+)?) Damage to (.+)$/);
     if (faction) {
       effects[`faction:${faction[2]}`] = round((Number(faction[1]) - 1) * 100);
@@ -342,7 +372,7 @@ function parseLines(lines, stats) {
       if (aura[1] === "You lose") other.push(line);
       continue;
     }
-    const triggered = parseConditional(line, stats);
+    const triggered = parseConditional(line, stats) ?? parseWordedConditional(line, stats);
     if (triggered) {
       conditional.push(triggered);
       continue;
@@ -803,6 +833,8 @@ check(modular.zaw.strikes.Balla?.damage.Puncture === 134.4 && modular.zaw.grips.
 check(modular.kitgun.secondary.chambers.Catchmoon?.damage.Gibber.Heat === 119, "Kitgun parts");
 check(arcanes["Primary Merciless"]?.weaponConditional?.[0].stacks === 12, "Primary Merciless");
 check(weaponMods["Galvanized Chamber"]?.conditional?.[0].effects.multishot > 0, "Galvanized Chamber");
+check(weaponMods["Galvanized Scope"]?.conditional?.length === 2, "Galvanized Scope's two triggers");
+check(warframeMods["Archon Intensify"]?.conditional?.[0].effects.strength === 30, "Archon Intensify's trigger");
 check(weaponMods["Condition Overload"]?.effects.damagePerStatus === 80, "Condition Overload");
 check(weaponMods["Bane Of Grineer"]?.effects["faction:Grineer"] === 30, "Bane of Grineer");
 check(companions["Adarza Kavat"]?.health === 310 && archwings.Itzal?.health === 200 && necramechs.Voidrig?.health === 1400, "other frames");
