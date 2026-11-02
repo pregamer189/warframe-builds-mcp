@@ -42,7 +42,7 @@ test("completes the MCP handshake and lists tools", () => {
   assert.equal(init.result.protocolVersion, "2025-06-18");
   assert.deepEqual(list.result.tools.map((t) => t.name), [
     "build_guide", "list_warframes", "list_weapons", "list_enemies", "list_modular_parts", "search_mods", "search_arcanes", "warframe_build", "weapon_build",
-    "suggest_weapon_build", "suggest_warframe_build", "explore_synergies", "get_profile", "update_profile", "save_build", "delete_saved_build",
+    "suggest_weapon_build", "suggest_warframe_build", "explore_synergies", "explore_loadout", "build_variations", "cost_of_leaving_out", "record_mechanic", "forget_mechanic", "get_profile", "update_profile", "save_build", "delete_saved_build",
     "market_price", "sell_advice", "alecaframe_account", "special_rules", "data_info",
   ]);
   const writers = list.result.tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name);
@@ -139,6 +139,78 @@ test("synergy search finds triggered bonuses, and ignores the arcane revive line
   const tank = call("explore_synergies", { warframe: "Mesa", theme: "tank", limit: 60 });
   assert.equal(tank.matching_arcanes.some((arcane) => arcane.name === "Arcane Pulse" && !/heal|health/i.test(arcane.text.join(" "))), false);
   assert.ok(tank.total_matching_arcanes < 58);
+});
+
+test("a subsume replaces an ability, within the wiki's limits", () => {
+  const build = call("warframe_build", { warframe: "Saryn", subsume: { ability: "Roar", replaces: "Molt" } });
+  assert.equal(build.subsume.from, "Rhino");
+  assert.match(build.subsume.helminth_note, /Changed when subsumed/);
+  assert.ok(build.ability_numbers.some((entry) => entry.ability === "Roar"));
+  assert.equal(build.ability_numbers.some((entry) => entry.ability === "Molt"), false);
+  // Rhino already has a damage buff, so another can only go over it.
+  assert.match(call("warframe_build", { warframe: "Chroma", subsume: { ability: "Roar", replaces: "Spectral Scream" } }).error, /only replace Vex Armor/);
+  assert.ok(!call("warframe_build", { warframe: "Chroma", subsume: { ability: "Roar", replaces: "Vex Armor" } }).error);
+  assert.match(call("warframe_build", { warframe: "Saryn", subsume: { ability: "Roar", replaces: "Nope" } }).error, /must be one of/);
+  assert.match(call("warframe_build", { warframe: "Ash", subsume: { ability: "Shuriken", replaces: "Teleport" } }).error, /already/);
+  // Its augment fits once infused, and doesn't otherwise.
+  const augment = (subsume) => call("warframe_build", { warframe: "Saryn", mods: ["Piercing Roar"], ...(subsume && { subsume }) }).ignored_mods;
+  assert.ok(augment());
+  assert.equal(augment({ ability: "Roar", replaces: "Molt" }), undefined);
+  assert.ok(Object.keys(data.subsumes).includes("Astral Shell") || Object.keys(data.subsumes).includes("Jade Stars"));
+});
+
+test("a loadout brings the parts together, and respects what's left out", () => {
+  const full = call("explore_loadout", { warframe: "Saryn", weapons: ["Soma Prime", "Kronen Prime"], companion: "Smeeta Kavat", theme: "armor strip nuke" });
+  assert.equal(full.weapons.length, 2);
+  assert.equal(full.companion.name, "Smeeta Kavat");
+  assert.ok(full.subsume_options.candidates.some((option) => option.roles.includes("Armor Strip")));
+  assert.ok(full.abilities_that_touch_weapons.some((ability) => ability.ability === "Toxic Lash"));
+  const none = call("explore_loadout", { warframe: "Saryn", no_subsume: true, no_companion: true });
+  assert.equal(none.subsume_options, undefined);
+  assert.equal(none.left_out.length, 2);
+  const infused = call("explore_loadout", { warframe: "Saryn", subsume: { ability: "Roar", replaces: "Molt" } });
+  assert.equal(infused.abilities.some((ability) => ability.name === "Molt"), false);
+  assert.equal(call("explore_loadout", { warframe: "Saryn", companion: "Carrier", no_companion: true }).error, "Pass companion or no_companion, not both.");
+});
+
+test("variations show the trade-offs", () => {
+  const byAbility = call("build_variations", { warframe: "Saryn Prime" });
+  assert.ok(byAbility.variations.length >= 2);
+  assert.ok(byAbility.variations.some((variation) => variation.prioritizes?.includes("Spores")));
+  const tiers = call("build_variations", { warframe: "Saryn Prime", stat: "duration" }).variations;
+  assert.equal(tiers[0].label, "Max duration");
+  assert.ok(tiers[0].stats.duration >= tiers[1].stats.duration && tiers[1].stats.duration >= tiers[2].stats.duration);
+  const others = (variation) => variation.stats.strength + variation.stats.range + variation.stats.efficiency;
+  assert.ok(others(tiers[2]) >= others(tiers[0]));
+  const weapon = call("build_variations", { weapon: "Soma Prime" }).variations;
+  assert.ok(weapon.some((variation) => variation.label === "Peak with triggers"));
+  assert.ok(call("build_variations", { weapon: "Skana" }).variations.every((variation) => variation.goal !== "sustained_dps"));
+});
+
+test("leaving something out gets a plain verdict", () => {
+  const big = call("cost_of_leaving_out", { weapon: "Soma Prime", leave_out: ["Serration", "Galvanized Aptitude", "Heavy Caliber", "Vital Sense", "Split Chamber", "Galvanized Chamber"] });
+  assert.equal(big.verdict, "big_loss");
+  assert.match(big.advice, /different build/);
+  assert.ok(big.results[0].loss_pct > 15);
+  const small = call("cost_of_leaving_out", { weapon: "Soma Prime", leave_out: ["Rime Rounds"] });
+  assert.equal(small.verdict, "barely_matters");
+  assert.deepEqual(small.not_in_the_best_build, ["Rime Rounds"]);
+  const frame = call("cost_of_leaving_out", { warframe: "Saryn Prime", goal: "strength", leave_out: ["Blind Rage"] });
+  assert.ok(frame.results[0].loss_pct > 0);
+  assert.ok(frame.mod_changes.removed.includes("Blind Rage"));
+});
+
+test("what a player records is used first, and can be removed", () => {
+  const { recorded } = call("record_mechanic", { subjects: ["Acid Shells"], reported: "Radius is 5 m now.", kind: "game_change" });
+  const rules = call("weapon_build", { weapon: "Kuva Sobek", mods: ["Acid Shells"] }).special_rules;
+  assert.equal(rules[0].status, "player_reported");
+  assert.match(rules[0].reported, /5 m/);
+  assert.ok(call("special_rules", { query: "radius is 5" }).total >= 1);
+  assert.equal(call("get_profile", {}).mechanics.length, 1);
+  call("forget_mechanic", { id: recorded.id });
+  assert.notEqual(call("weapon_build", { weapon: "Kuva Sobek", mods: ["Acid Shells"] }).special_rules?.[0]?.status, "player_reported");
+  assert.match(call("forget_mechanic", { id: 99 }).error, /No recorded/);
+  assert.match(call("record_mechanic", { subjects: [], reported: "x" }).error, /subjects/);
 });
 
 test("attacks the wiki lists above our damage say so", () => {
