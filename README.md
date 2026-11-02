@@ -25,6 +25,9 @@ The server runs on your computer, so it can't run there. [A lite skill](INSTALL.
 - **Mod suggestions.** The most damage for a named enemy, or minimums such as 175% efficiency with as much strength as possible, including where to put Forma.
 - **Your account.** A local profile holds the mods you have or lack, your Rivens, spare items and saved builds, and suggestions respect it.
 - **Special rules.** Hundreds of mechanics that players found and shared in videos, such as hidden multipliers and mods that don't do what they say, each with its date and source, and what later patches and the wiki say. See [Special rules](#special-rules).
+- **The whole character.** Subsumes, including how each changes when subsumed, weapons and companions are considered together. Say you don't want a subsume, a pet or an expensive mod, and it tells you plainly what that costs and whether a different build is better.
+- **Trade-offs.** Ask for a recommended or max build and it shows several, saying which ability each is for and what it gives up.
+- **Videos and changes.** Give it a video, or tell it something changed, and it checks that against patches, uses it, and remembers it.
 - **Selling.** Live prices and recent sales from warframe.market, with a warning before you sell a mod a saved build uses.
 - **AlecaFrame.** Optional currencies, trades and relics, using a public token you create.
 
@@ -38,6 +41,10 @@ The server runs on your computer, so it can't run there. [A lite skill](INSTALL.
 | `suggest_warframe_build` | Picks mods towards a goal such as strength or effective health, or minimums such as 175% efficiency |
 | `weapon_build` | Works out a weapon, Zaw or Kitgun build. Melee adds range, heavy attacks and per-combo stance DPS |
 | `warframe_build` | Works out a Warframe, companion, Archwing or Necramech build |
+| `explore_loadout` | The whole character together: Warframe, subsume, weapons and companion, with what links them |
+| `build_variations` | Several builds for one item: by ability priority, or max, 75% and 50% of a stat, with what each gives up |
+| `cost_of_leaving_out` | What a build loses without a mod or arcane, the replacement, and a plain verdict |
+| `record_mechanic`, `forget_mechanic` | Save what you tell it changed, or findings from a video, so later builds use them |
 | `special_rules` | Finds reported mechanics the game's text doesn't explain, with date, source and later patches |
 | `get_profile`, `update_profile` | Show and change your saved mods, items, Rivens and notes |
 | `save_build`, `delete_saved_build` | Keep the builds you like |
@@ -119,6 +126,7 @@ These checks were done by AI reading captions, notes and wiki text, **not by tes
 - **Status builds:** `status_dps` counts damage over time only, with no credit for Viral or other debuffs. Pass `armor_strip` to see stripped armor.
 - **Incarnon Forms:** their own ammo and evolution perks aren't in the sources, so trust `burst_dps` over `sustained_dps`.
 - **Suggestions:** they assume mods are at max rank, and that you own any the profile doesn't rule out. They only choose mods with effects the calculator can model, and they don't choose arcanes. The search is heuristic, so a better build can exist. Against brute force over each weapon's 15 strongest mods it matched in all 16 cases tested, but a wider 17-mod run found one heavy attack build 4.3% better.
+- **Subsumes and companions:** an infused ability's listed numbers are the original Warframe's, with the wiki's note when it's weaker when subsumed. Companion abilities and the link between parts of a loadout aren't calculated, so they're the assistant's reasoning.
 - **Not supported:** Railjack, Necramech melee, vehicles, amps and Operator gear.
 
 ## Game data

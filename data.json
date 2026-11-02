@@ -1,7 +1,7 @@
 {
  "meta": {
   "format": 2,
-  "imported": "2026-11-01",
+  "imported": "2026-11-02",
   "sources": [
    "WFCD/warframe-items (MIT)",
    "wiki.warframe.com data modules"
@@ -77358,6 +77358,1218 @@
     "behavior": "multiplying",
     "ratio": 1
    }
+  }
+ },
+ "subsumes": {
+  "Shuriken": {
+   "from": "Ash",
+   "roles": [
+    "Armor Strip"
+   ],
+   "damage": [
+    "Slash"
+   ],
+   "augments": [
+    "Seeking Shuriken"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Petrify": {
+   "from": "Atlas",
+   "roles": [
+    "Crowd Control",
+    "Farming"
+   ],
+   "damage": [],
+   "augments": [
+    "Ore Gaze"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Petrified enemies do not drop Rubble."
+  },
+  "Silence": {
+   "from": "Banshee",
+   "roles": [
+    "Damage Debuff",
+    "Disable Enemy Abilities",
+    "Stealth"
+   ],
+   "damage": [
+    "Silence"
+   ],
+   "augments": [
+    "Savage Silence"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Lull": {
+   "from": "Baruuk",
+   "roles": [
+    "Crowd Control",
+    "Stealth"
+   ],
+   "damage": [
+    "Sleep"
+   ],
+   "augments": [
+    "Endless Lullaby"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Sentient Wrath": {
+   "from": "Caliban",
+   "roles": [
+    "Crowd Control",
+    "Damage Debuff"
+   ],
+   "damage": [
+    "Tau"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Frontal cast only and Tau Status Effect removed.; Range reduced to a frontal cone spanning; ?; degrees and cannot inflict Tau status."
+  },
+  "Elemental Ward": {
+   "from": "Chroma",
+   "roles": [
+    "Health Bonus",
+    "Shield Bonus",
+    "Reload Speed Bonus",
+    "Armor Bonus"
+   ],
+   "damage": [
+    "Heat",
+    "Electricity",
+    "Toxin",
+    "Cold"
+   ],
+   "augments": [
+    "Everlasting Ward"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Elemental Ward versions of the ability are determined by the chosen Warframe Primary Emission Color."
+  },
+  "Fractured Blast": {
+   "from": "Citrine",
+   "roles": [
+    "Crowd Control",
+    "Healing",
+    "Energy Restore"
+   ],
+   "damage": [
+    "Slash",
+    "Impact"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Strength; Damage reduced to 125 / 150 / 200 / 250, Health Orb drop chance reduced to 25%, and Energy Orb drop chance reduced to 10%."
+  },
+  "Evade": {
+   "from": "Cyte-09",
+   "roles": [
+    "Healing",
+    "Invisibility"
+   ],
+   "damage": [],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Maximum Duration capped to 25 seconds.; Base maximum duration is reduced to 15 seconds and is capped at; 25; seconds."
+  },
+  "Wyrd Scythes": {
+   "from": "Dagath",
+   "roles": [
+    "Crowd Control",
+    "Damage"
+   ],
+   "damage": [
+    "Viral"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Slow.; Slow is reduced to 15% / 18% / 22% / 26%."
+  },
+  "Dark Verse": {
+   "from": "Dante",
+   "roles": [
+    "Damage"
+   ],
+   "damage": [
+    "Slash",
+    "Stagger"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Fire Blast": {
+   "from": "Ember",
+   "roles": [
+    "Crowd Control",
+    "Armor Strip",
+    "Healing"
+   ],
+   "damage": [
+    "Heat"
+   ],
+   "augments": [
+    "Healing Flame",
+    "Purifying Flames"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: No Overguard From Healing Flames Augment; Armor reduction per cast is capped at 75%.; Healing Flame heals for 37 health for each enemy hit and does not grant Overguard."
+  },
+  "Rest & Rage": {
+   "from": "Equinox",
+   "roles": [
+    "Crowd Control",
+    "Damage Debuff",
+    "Stealth"
+   ],
+   "damage": [],
+   "augments": [
+    "Calm & Frenzy"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Rest or Rage versions of the ability are determined by the chosen Warframe Primary Emission Color."
+  },
+  "Radial Blind": {
+   "from": "Excalibur",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [
+    "Blind"
+   ],
+   "augments": [
+    "Radiant Finish"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Self Portrait": {
+   "from": "Follie",
+   "roles": [
+    "Damage Reduction"
+   ],
+   "damage": [
+    "Corrosive"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Damage Reduction cap at 75%, and Inkblot will not be applied on enemies."
+  },
+  "Ice Wave": {
+   "from": "Frost",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [
+    "Cold"
+   ],
+   "augments": [
+    "Ice Wave Impedance"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Spectrorage": {
+   "from": "Gara",
+   "roles": [
+    "Crowd Control",
+    "Energy Restore"
+   ],
+   "damage": [
+    "Impact",
+    "Puncture",
+    "Slash"
+   ],
+   "augments": [
+    "Spectrosiphon"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Blood Altar": {
+   "from": "Garuda",
+   "roles": [
+    "Healing"
+   ],
+   "damage": [],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Thermal Sunder": {
+   "from": "Gauss",
+   "roles": [
+    "Crowd Control",
+    "Nuking",
+    "Damage Buff"
+   ],
+   "damage": [
+    "Cold",
+    "Heat"
+   ],
+   "augments": [
+    "Thermal Transfer"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Scaling from Heat Status on enemies capped to 10x Ability Damage.; Damage is equivalent to 50% of Gauss's battery; 225 / 300 / 375 / 450 Cold damage and 450 / 600 / 750 / 900 Heat damage."
+  },
+  "Nourish": {
+   "from": "Grendel",
+   "roles": [
+    "Crowd Control",
+    "Damage Buff",
+    "Energy Restore"
+   ],
+   "damage": [
+    "Viral"
+   ],
+   "augments": [
+    "Hearty Nourishment"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Self-Heal Removed and Effect Reduced; No self healing, armor applies only; 1; Viral stack, energy multiplier is reduced to 1.3 / 1.39 / 1.48 / 1.6x, and Viral weapon bonus damage is reduced to +24% / +30% / +36% / +45%.; Does not have a swallowed enemy requirement, as other Warframes cannot cast Feast."
+  },
+  "Coil Horizon": {
+   "from": "Gyre",
+   "roles": [
+    "Damage",
+    "Crowd Control"
+   ],
+   "damage": [
+    "Electricity"
+   ],
+   "augments": [
+    "Coil Recharge"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Condemn": {
+   "from": "Harrow",
+   "roles": [
+    "Crowd Control",
+    "Shield Restore"
+   ],
+   "damage": [],
+   "augments": [
+    "Tribunal"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Other Warframes cannot benefit from the Tribunal augment, due to their inability to cast Penance and Thurible."
+  },
+  "Pillage": {
+   "from": "Hildryn",
+   "roles": [
+    "Defense Strip",
+    "Shield Restore",
+    "Status Cleanse"
+   ],
+   "damage": [],
+   "augments": [
+    "Blazing Pillage"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Costs 50 Energy instead of consuming Shields.; Does not generate shields for Inaros, Kullervo and Nidus.; Other Warframes cannot benefit from the Blazing Pillage augment, due to their inability to cast Haven."
+  },
+  "Tempest Barrage": {
+   "from": "Hydroid",
+   "roles": [
+    "Crowd Control",
+    "Armor Strip"
+   ],
+   "damage": [
+    "Corrosive",
+    "Stagger",
+    "Viral"
+   ],
+   "augments": [
+    "Viral Tempest"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Desiccation": {
+   "from": "Inaros",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [],
+   "augments": [
+    "Desiccation's Curse"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Quiver": {
+   "from": "Ivara",
+   "roles": [
+    "Stealth"
+   ],
+   "damage": [
+    "Sleep"
+   ],
+   "augments": [
+    "Empowered Quiver",
+    "Power of Three"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Tap-cast for Cloak, hold-cast for Noise. Sleep and Dashwire arrows not available.; Tap/hold cast inversion in Settings menu still applies."
+  },
+  "Ophanim Eyes": {
+   "from": "Jade",
+   "roles": [
+    "Crowd Control",
+    "Defense Strip"
+   ],
+   "damage": [
+    "Heat",
+    "Slow"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Cannot revive allies."
+  },
+  "Ensnare": {
+   "from": "Khora",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [],
+   "augments": [],
+   "scales_with": [
+    "duration",
+    "range"
+   ]
+  },
+  "Omamori": {
+   "from": "Koumei",
+   "roles": [
+    "Healing"
+   ],
+   "damage": [],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Gain between 10 to 20 Omamori Charms but cannot gain the invulnerability."
+  },
+  "Wrathful Advance": {
+   "from": "Kullervo",
+   "roles": [
+    "Damage Buff",
+    "Movement"
+   ],
+   "damage": [],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Range and Melee Critical Chance; Range reduced to 10 / 11 / 11.5 / 12.5 meters and melee critical chance reduced to 25% / 50% / 75% / 100%."
+  },
+  "Vial Rush": {
+   "from": "Lavos",
+   "roles": [
+    "Crowd Control",
+    "Damage Buff"
+   ],
+   "damage": [
+    "Cold"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Costs; 0; energy with a; 5; second cooldown."
+  },
+  "Banish": {
+   "from": "Limbo",
+   "roles": [
+    "Crowd Control",
+    "Support"
+   ],
+   "damage": [
+    "Impact"
+   ],
+   "augments": [
+    "Rift Haven"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Base ability includes hold-cast to cancel the ability, releasing all affected targets from the Rift."
+  },
+  "Decoy": {
+   "from": "Loki",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [
+    "All"
+   ],
+   "augments": [
+    "Damage Decoy",
+    "Deceptive Bond",
+    "Savior Decoy"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Pull": {
+   "from": "Mag",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [
+    "Magnetic"
+   ],
+   "augments": [
+    "Greedy Pull"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Range; Range reduced to 7.5 / 10 / 11 / 12.5 meters."
+  },
+  "Shooting Gallery": {
+   "from": "Mesa",
+   "roles": [
+    "Damage Buff",
+    "Crowd Control"
+   ],
+   "damage": [
+    "Blind"
+   ],
+   "augments": [
+    "Muzzle Flash"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Eclipse": {
+   "from": "Mirage",
+   "roles": [
+    "Damage Buff",
+    "Damage Reduction"
+   ],
+   "damage": [],
+   "augments": [
+    "Total Eclipse"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Effectiveness; Damage bonus reduced to 2% / 9% / 15% / 30% and Damage Reduction cap reduced to; 75%; .; Limited to 1 damage buffing ability per Warframe."
+  },
+  "Neote": {
+   "from": "Narin",
+   "roles": [
+    "Crowd Control",
+    "Support"
+   ],
+   "damage": [
+    "Cold",
+    "Puncture"
+   ],
+   "augments": [],
+   "scales_with": []
+  },
+  "Terrify": {
+   "from": "Nekros",
+   "roles": [
+    "Armor Strip",
+    "Crowd Control"
+   ],
+   "damage": [],
+   "augments": [
+    "Creeping Terrify"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Fire Walker": {
+   "from": "Nezha",
+   "roles": [
+    "Crowd Control",
+    "Movement Speed",
+    "Status Cleanse"
+   ],
+   "damage": [
+    "Heat"
+   ],
+   "augments": [
+    "Pyroclastic Flow"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Larva": {
+   "from": "Nidus",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [
+    "Toxin"
+   ],
+   "augments": [
+    "Larva Burst"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Range; Radius reduced to 5.33 / 6 / 6.67 / 8 meters."
+  },
+  "Brightbonnet": {
+   "from": "Nokko",
+   "roles": [
+    "Energy Restore",
+    "Strength Buff"
+   ],
+   "damage": [
+    "Stagger"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Reduced Strength buff and Energy Restoration.; Ability Strength bonus reduced to 10% / 13% / 17% / 20% and energy restore reduced to 6.67 / 8 / 8.67 / 10."
+  },
+  "Null Star": {
+   "from": "Nova",
+   "roles": [
+    "Damage Reduction"
+   ],
+   "damage": [
+    "Blast",
+    "Heat"
+   ],
+   "augments": [
+    "Neutron Star"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Damage Reduction capped at 75%."
+  },
+  "Mind Control": {
+   "from": "Nyx",
+   "roles": [
+    "Crowd Control",
+    "Support"
+   ],
+   "damage": [
+    "Radiation"
+   ],
+   "augments": [
+    "Mind Freak"
+   ],
+   "scales_with": [
+    "duration",
+    "range"
+   ]
+  },
+  "Smite": {
+   "from": "Oberon",
+   "roles": [
+    "Armor Strip",
+    "Crowd Control",
+    "Damage Buff"
+   ],
+   "damage": [
+    "Radiation",
+    "Stun",
+    "Stagger"
+   ],
+   "augments": [
+    "Smite Infusion"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Reduced maximum Strength; Percentage damage cap reduced to; 50%; ."
+  },
+  "Resonator": {
+   "from": "Octavia",
+   "roles": [
+    "Damage",
+    "Crowd Control"
+   ],
+   "damage": [
+    "Blast",
+    "Stagger"
+   ],
+   "augments": [
+    "Conductor"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Uses the default Mandachord song."
+  },
+  "Webbed Embrace": {
+   "from": "Oraxia",
+   "roles": [
+    "Crowd Control",
+    "Damage Buff"
+   ],
+   "damage": [
+    "Toxin"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Range; Range reduced to Ability Range? / ? / ? / 6.67 meters."
+  },
+  "Dispensary": {
+   "from": "Protea",
+   "roles": [
+    "Healing",
+    "Energy Restore"
+   ],
+   "damage": [],
+   "augments": [
+    "Repair Dispensary"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Duration; Duration reduced to 5 / 7.5 / 10 / 12.5 seconds."
+  },
+  "Chyrinka Pillar": {
+   "from": "Qorvex",
+   "roles": [
+    "Damage",
+    "Crowd Control"
+   ],
+   "damage": [
+    "Radiation",
+    "Stagger",
+    "Ragdoll"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Reave": {
+   "from": "Revenant",
+   "roles": [
+    "Healing",
+    "Shield Restore",
+    "Invulnerability"
+   ],
+   "damage": [],
+   "augments": [
+    "Blinding Reave"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Roar": {
+   "from": "Rhino",
+   "roles": [
+    "Damage Buff"
+   ],
+   "damage": [
+    "Puncture",
+    "Knockdown"
+   ],
+   "augments": [
+    "Piercing Roar"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Damage Increase; Damage bonus reduced to 2% / 9% / 15% / 30%.; Limited to 1 damage buffing ability per Warframe."
+  },
+  "Molt": {
+   "from": "Saryn",
+   "roles": [
+    "Crowd Control",
+    "Healing"
+   ],
+   "damage": [
+    "Toxin"
+   ],
+   "augments": [
+    "Regenerative Molt"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Gloom": {
+   "from": "Sevagoth",
+   "roles": [
+    "Crowd Control",
+    "Healing"
+   ],
+   "damage": [
+    "Slow"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Jade Stars": {
+   "from": "Sirius & Orion",
+   "roles": [
+    "Damage (Jade Stars)",
+    "Decoy (Astral Shell)"
+   ],
+   "damage": [
+    "Heat (Jade Stars)",
+    "Blast (Astral Shell)"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Cannot be used to swap Warframe"
+  },
+  "Astral Shell": {
+   "from": "Sirius & Orion",
+   "roles": [
+    "Damage (Jade Stars)",
+    "Decoy (Astral Shell)"
+   ],
+   "damage": [
+    "Heat (Jade Stars)",
+    "Blast (Astral Shell)"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Cannot be used to swap Warframe"
+  },
+  "Tharros Strike": {
+   "from": "Styanax",
+   "roles": [
+    "Crowd Control",
+    "Defense Strip",
+    "Healing"
+   ],
+   "damage": [
+    "Impact",
+    "Stun"
+   ],
+   "augments": [
+    "Tharros Lethality"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Pyrotechnics": {
+   "from": "Temple",
+   "roles": [
+    "Damage"
+   ],
+   "damage": [
+    "Impact",
+    "Puncture",
+    "Slash",
+    "Heat"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Backbeat synergy is unavailable."
+  },
+  "Spellbind": {
+   "from": "Titania",
+   "roles": [
+    "Crowd Control",
+    "Status Cleanse"
+   ],
+   "damage": [
+    "Disarmed",
+    "Ragdoll"
+   ],
+   "augments": [
+    "Spellbound Harvest"
+   ],
+   "scales_with": [
+    "duration",
+    "range"
+   ],
+   "note": "Spellbound Harvest augment grants 50 shields if used on Hildryn; Confirmation needed; "
+  },
+  "Well of Life": {
+   "from": "Trinity",
+   "roles": [
+    "Healing",
+    "Crowd Control"
+   ],
+   "damage": [],
+   "augments": [
+    "Pool of Life"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Increased the Immortality Cooldown to 120 seconds."
+  },
+  "Remedium": {
+   "from": "Uriel",
+   "roles": [
+    "Healing",
+    "Shield Restore",
+    "Status Cleanse",
+    "Invulnerability"
+   ],
+   "damage": [],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Reduced Healing and Gulphagor is removed; Healing is reduced to 24% / 28% / 31% / 35% and does not come with Gulphagor."
+  },
+  "Warcry": {
+   "from": "Valkyr",
+   "roles": [
+    "Attack Speed Buff",
+    "Armor Bonus"
+   ],
+   "damage": [],
+   "augments": [
+    "Eternal War"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Speed Increase; Attack Speed bonus reduced to 9% / 12% / 15% / 30%."
+  },
+  "Tesla Nervos": {
+   "from": "Vauban",
+   "roles": [
+    "Crowd Control"
+   ],
+   "damage": [
+    "Blast",
+    "Electricity"
+   ],
+   "augments": [
+    "Tesla Bank"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Shock": {
+   "from": "Volt",
+   "roles": [
+    "Crowd Control",
+    "Damage Buff"
+   ],
+   "damage": [
+    "Electricity"
+   ],
+   "augments": [
+    "Shock Trooper"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Lycath's Hunt": {
+   "from": "Voruna",
+   "roles": [
+    "Healing",
+    "Energy Restore"
+   ],
+   "damage": [],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Passive Removed; Health and Energy Orb drop chance reduced to; 50%; and cannot activate the Heavy Attack Efficiency passive."
+  },
+  "Breach Surge": {
+   "from": "Wisp",
+   "roles": [
+    "Damage",
+    "Crowd Control"
+   ],
+   "damage": [
+    "Radiation",
+    "Blind"
+   ],
+   "augments": [
+    "Critical Surge"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Other Warframes cannot benefit from the Critical Surge augment, due to their inability to cast Reservoirs."
+  },
+  "Defy": {
+   "from": "Wukong",
+   "roles": [
+    "Invulnerability",
+    "Armor Bonus",
+    "Status Cleanse"
+   ],
+   "damage": [
+    "Impact",
+    "Ragdoll"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Changed when subsumed: Diminished Max Armor; Armor bonus cap reduced to; 750; ."
+  },
+  "Xata's Whisper": {
+   "from": "Xaku",
+   "roles": [
+    "Damage Buff"
+   ],
+   "damage": [
+    "Void"
+   ],
+   "augments": [],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Limited to 1 damage buffing ability per Warframe."
+  },
+  "Aquablades": {
+   "from": "Yareli",
+   "roles": [
+    "Crowd Control",
+    "Damage"
+   ],
+   "damage": [
+    "Slash",
+    "Stagger"
+   ],
+   "augments": [
+    "Surging Blades"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ]
+  },
+  "Airburst": {
+   "from": "Zephyr",
+   "roles": [
+    "Crowd Control",
+    "Damage Buff"
+   ],
+   "damage": [
+    "Impact",
+    "Puncture",
+    "Slash",
+    "Knockdown",
+    "Ragdoll"
+   ],
+   "augments": [
+    "Airburst Rounds"
+   ],
+   "scales_with": [
+    "strength",
+    "duration",
+    "range"
+   ],
+   "note": "Base ability includes tap-cast for wind vacuum, hold-cast for wind explosion."
+  }
+ },
+ "subsumeRestrictions": {
+  "abilities": [
+   "Eclipse",
+   "Roar",
+   "Xata's Whisper"
+  ],
+  "replaces": {
+   "Chroma": "Vex Armor",
+   "Cyte-09": "Resupply",
+   "Mirage": "Eclipse",
+   "Octavia": "Amp",
+   "Oraxia": "Silken Stride",
+   "Rhino": "Roar",
+   "Temple": "Ripper's Wail",
+   "Uriel": "Demonium",
+   "Xaku": "Xata's Whisper"
   }
  },
  "conditionOverloadStances": {

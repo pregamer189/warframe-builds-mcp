@@ -6,7 +6,8 @@ import { DATA_VERSION, HOME, data, normalize, round } from "./lib/data.mjs";
 import { alecaframeAccount } from "./lib/alecaframe.mjs";
 import { warframeBuild } from "./lib/frames.mjs";
 import { marketPrice, sellAdvice } from "./lib/market.mjs";
-import { deleteBuild, firstTime, getProfile, loadProfile, saveBuild, suggestionLimits, updateProfile } from "./lib/profile.mjs";
+import { costOfLeavingOut, buildVariations, exploreLoadout } from "./lib/loadout.mjs";
+import { deleteBuild, firstTime, forgetMechanic, getProfile, loadProfile, recordMechanic, saveBuild, suggestionLimits, updateProfile } from "./lib/profile.mjs";
 import { suggestWarframeBuild, suggestWeaponBuild } from "./lib/suggest.mjs";
 import { rulesFor, specialRules } from "./lib/special-rules.mjs";
 import { exploreSynergies } from "./lib/synergy.mjs";
@@ -107,7 +108,7 @@ const withProfile = (run, table) => ({ use_profile = true, ...args }) => {
 };
 // Adds what players have reported about the items a result uses. An error result stays as it is.
 const itemName = (item) => (typeof item === "string" ? item : item?.name);
-const usedItems = ({ warframe, weapon, stance, aura, second_aura, exilus, mods = [], arcanes = [] }) => [warframe, weapon, stance, aura, second_aura, exilus, ...mods, ...arcanes].map(itemName);
+const usedItems = ({ warframe, weapon, stance, aura, second_aura, exilus, subsume, mods = [], arcanes = [] }) => [warframe, weapon, stance, aura, second_aura, exilus, subsume?.ability, ...mods, ...arcanes].map(itemName);
 const withRules = (run) => (args) => ({ ...run(args), ...rulesFor(usedItems(args), { limit: 5, short: true }) });
 const ALL_MODS = () => ({ ...data.warframeMods, ...data.weaponMods });
 
@@ -173,6 +174,7 @@ const targetProp = {
   type: ["string", "object"],
   description: "The enemy, as a name or faction such as \"Heavy Gunner\" or \"Grineer\", or {enemy, level, steel_path, faction, armor}. An enemy with a level scales its armor, health and shields. steel_path adds 100 levels to that level and multiplies health and shields by 2.5, so if the level you have already includes the 100, ask rather than guess. armor_strip is the percentage of armor removed: the wiki lists Corrosive as 26% for the first stack and 6% more per stack, up to 80% at 10, and Heat as gradually up to 50%. Applies faction damage multipliers, armor reduction and faction mods. See list_enemies.",
 };
+const subsumeProp = { type: "object", description: "An ability infused through the Helminth: {ability, replaces}, such as {ability: \"Roar\", replaces: \"Molt\"}. See explore_loadout.", properties: { ability: { type: "string" }, replaces: { type: "string" } }, required: ["ability", "replaces"] };
 const useProfile = { type: "boolean", description: "Respect the saved profile's missing and owned mods. Default true." };
 const detailProp = { type: "boolean", description: "Return full stats for every result. Lists are short summaries otherwise, except for 3 matches or fewer." };
 const weaponSource = {
@@ -252,6 +254,7 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
+        subsume: subsumeProp,
         warframe: { type: "string", description: "Name of a Warframe, companion, Archwing or Necramech." },
         mods: modList,
         aura: modSpec("Warframes only. Aura mod"),
@@ -329,6 +332,7 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
+        subsume: subsumeProp,
         warframe: { type: "string" },
         goal: { type: ["string", "object"], description: `One stat, or weights such as {strength: 2, efficiency: 1}. Stats: ${statGoals}.` },
         targets: { type: "object", description: "Minimums to reach first, such as {efficiency: 175, strength: 145}. Results list any it could not reach." },
@@ -374,6 +378,105 @@ const TOOLS = [
       const augments = (result.augments ?? []).map(itemName);
       return { ...result, ...rulesFor([result.subject, ...abilities, ...augments]) };
     },
+  },
+  {
+    name: "explore_loadout",
+    description: "The whole character for one job: Warframe, subsume, weapons and companion together. Returns each part's facts, abilities that touch weapons, fitting subsumes with what changes when subsumed, companion mods and the rules for every part. Use it when building a full loadout, or when a player doesn't want a subsume or companion.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        warframe: { type: "string" },
+        weapons: { type: "array", items: { type: ["string", "object"] }, description: "Weapon names, or {weapon}, {zaw} or {kitgun} objects." },
+        companion: { type: "string", description: "A companion, such as Smeeta Kavat." },
+        companion_weapon: { type: "string", description: "A sentinel weapon or beast claws." },
+        theme: { type: "string", description: "What it's for: nuke, tank, buff, armor, energy, control, support, stealth, or words from the game's text. Ranks the subsumes." },
+        subsume: subsumeProp,
+        no_subsume: { type: "boolean", description: "The player doesn't want a subsume." },
+        no_companion: { type: "boolean", description: "The player doesn't want a companion." },
+        limit: { type: "number", description: "Most subsumes and companion mods to list. Default 8." },
+      },
+      required: ["warframe"],
+    },
+    run: (args) => {
+      const result = exploreLoadout(args);
+      return { ...result, ...rulesFor([result.warframe, ...result.abilities.map(itemName), result.subsume?.ability, ...result.weapons.map(itemName), result.companion?.name, result.companion_weapon?.name], { limit: 15 }) };
+    },
+  },
+  {
+    name: "build_variations",
+    description: "Several builds for the same item, showing the trade-offs. For a recommended build on a Warframe, gives a build for each group of abilities that scale the same way, saying which abilities it prioritizes. With stat, such as a max duration build, gives max, 75% and 50% of the possible gain, with what each wins back. Also takes weapon. Use this rather than one suggestion when the player asks for a recommended or max build.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        warframe: { type: "string" },
+        weapon: { type: "string" },
+        stat: { type: "string", description: "Warframes: the stat to push: strength, duration, range, efficiency, health, shields, armor, energy or effective_health." },
+        ability: { type: "string", description: "Warframes: only build around this ability." },
+        subsume: subsumeProp,
+        mods: { type: "array", items: { type: "string" }, description: "Mods every variation must use, such as an augment." },
+        exclude: { type: "array", items: { type: "string" }, description: "Mods not to use." },
+        aura: { type: ["string", "object"] },
+        arcanes: { type: "array", items: { type: ["string", "object"] } },
+        archon_shards: { type: "array", items: { type: ["string", "object"] } },
+        conditionals: { type: "boolean" },
+        forma: { type: "number", description: "Extra Forma allowed. Default 3." },
+        target: targetProp,
+        status_types_on_target: { type: "number" },
+        attack: { type: "string" },
+      },
+    },
+    run: (args) => {
+      const { warframe, weapon, subsume, mods = [] } = args;
+      const profiled = withProfile(buildVariations, warframe ? () => data.warframeMods : () => data.weaponMods)(args);
+      return { ...profiled, ...rulesFor([warframe, weapon, subsume?.ability, ...mods], { limit: 8, short: true }) };
+    },
+  },
+  {
+    name: "cost_of_leaving_out",
+    description: "What a build loses without a mod or arcane, such as one that's too expensive or not owned. Compares the best build with and without it, gives the replacement and a verdict. Be direct about a big loss, and offer a different build rather than patching this one.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        leave_out: { type: "array", items: { type: "string" }, description: "Mods or arcanes to go without." },
+        warframe: { type: "string" },
+        weapon: { type: "string" },
+        goal: { type: ["string", "object"], description: "As in the suggest tools." },
+        targets: { type: "object" },
+        mods: { type: "array", items: { type: "string" } },
+        exclude: { type: "array", items: { type: "string" } },
+        arcanes: { type: "array", items: { type: ["string", "object"] } },
+        conditionals: { type: "boolean" },
+        forma: { type: "number" },
+        target: targetProp,
+        status_types_on_target: { type: "number" },
+        attack: { type: "string" },
+        subsume: subsumeProp,
+      },
+      required: ["leave_out"],
+    },
+    run: costOfLeavingOut,
+  },
+  {
+    name: "record_mechanic",
+    description: "Save something the player told you about the game, or a finding from a video they gave you: a nerf, a buff, something that works differently, or a new method. Results for those items list it first from then on, ahead of older rules. Use it when a player says something changed or isn't how the tools describe it.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        subjects: { type: "array", items: { type: "string" }, description: "Exact item names." },
+        reported: { type: "string", description: "What happens, in your own words." },
+        build_impact: { type: "string", description: "What it means for builds." },
+        kind: { type: "string", enum: ["game_change", "video", "player_note"] },
+        source: { type: "object", description: "For a video: {creator, title, uploaded, url}.", properties: { creator: { type: "string" }, title: { type: "string" }, uploaded: { type: "string" }, url: { type: "string" } } },
+      },
+      required: ["subjects", "reported"],
+    },
+    run: recordMechanic,
+  },
+  {
+    name: "forget_mechanic",
+    description: "Remove something saved with record_mechanic, by the id get_profile shows.",
+    inputSchema: { type: "object", properties: { id: { type: "number" } }, required: ["id"] },
+    run: forgetMechanic,
   },
   {
     name: "get_profile",
@@ -507,7 +610,7 @@ async function handle({ method, params }) {
         protocolVersion: SUPPORTED_PROTOCOLS.includes(params?.protocolVersion) ? params.protocolVersion : SUPPORTED_PROTOCOLS[0],
         capabilities: { tools: {} },
         serverInfo: { name: "warframe-builder", version },
-        instructions: "A Warframe builder companion. Call build_guide once before helping with any Warframe build, mods, enemies or selling; it explains how to use these tools. Check get_profile early and respect the player's mods, Rivens and notes. Tell the player about warnings and not_calculated effects in results. Say which parts are calculated and which are theory, because nothing is tested in-game.",
+        instructions: "A Warframe builder companion. Call build_guide once before helping with any Warframe build, mods, enemies or selling; it explains how to use these tools. Check get_profile early and respect the player's mods, Rivens and notes. Tell the player about warnings and not_calculated effects in results. Use record_mechanic when a player says something changed, and read any video they give you. Say which parts are calculated and which are theory, because nothing is tested in-game.",
       };
     case "ping":
       return {};

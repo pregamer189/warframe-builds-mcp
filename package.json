@@ -1,6 +1,6 @@
 {
   "name": "warframe-builds-mcp",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "MCP server: a Warframe builder companion with synergy builds, calculators, a saved profile and market prices",
   "type": "module",
   "bin": { "warframe-builds-mcp": "server.mjs" },
