@@ -275,7 +275,7 @@ test("special rules keep their source and what later checks found", () => {
     assert.ok(["no_later_change", "changed", "disputed", "contradicted", "fixed"].includes(rule.status));
     assert.match(rule.source.url, /^https:\/\/youtu\.be\/[\w-]+\?t=\d+$/);
     assert.match(rule.source.uploaded, /^\d{4}-\d{2}-\d{2}$/);
-    assert.ok(rule.source.uploaded <= checked.date);
+    assert.ok(rule.source.uploaded <= checked.checked_on);
     if (rule.status === "changed") assert.ok(rule.later_patch, rule.reported);
   }
 });
@@ -286,8 +286,8 @@ test("special rules are searchable and appear with the items they name", () => {
   assert.match(found.note, /not calculated/);
   assert.ok(call("special_rules", { status: "changed", limit: 60 }).rules.every((r) => r.later_patch));
   const banshee = call("explore_synergies", { warframe: "Banshee", theme: "sonar" });
-  const sonar = banshee.special_rules.find((r) => r.subjects.includes("Sonar") && r.status === "changed");
-  assert.match(sonar.later_patch.detail, /Weak Point/i);
+  const sonar = banshee.special_rules.filter((r) => r.subjects.includes("Sonar") && r.status === "changed");
+  assert.ok(sonar.some((r) => /Weak Point/i.test(r.later_patch.detail)));
   const build = call("weapon_build", { weapon: "Soma Prime", mods: ["Galvanized Aptitude"] });
   assert.ok(build.special_rules.length <= 5 && build.special_rules[0].uploaded);
   assert.equal(build.special_rules[0].source, undefined);

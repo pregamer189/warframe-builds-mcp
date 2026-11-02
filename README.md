@@ -98,17 +98,18 @@ Formulas come from the Warframe wiki, and the tests check them against the wiki'
 
 ## Special rules
 
-`lib/special-rules.json` holds mechanics reported in YouTube videos from January 2025 to October 2026, written in our own words with a link to the moment in each video. Each was checked against the official patch notes since its video, up to 44.1.4 (28 October 2026), and against the wiki:
+`lib/special-rules.json` holds mechanics reported in YouTube videos from August 2024 to November 2026, from big build channels and small deep-research ones,, written in our own words with a link to the moment in each video. Each was checked against the official patch notes since its video, up to 44.1.4 (28 October 2026), and against the wiki:
 
 | Status | Meaning |
 | --- | --- |
+| `player_reported` | You recorded it yourself, and it overrides older rules on the same point |
 | `no_later_change` | Nothing found contradicts it, which doesn't prove it |
 | `changed` | A later patch changed it. The report is the old behaviour, and `later_patch` the new |
 | `disputed` | The wiki disagrees on some of it, or the check was inconclusive |
 | `contradicted` | The wiki or a patch says otherwise |
 | `fixed` | It no longer works |
 
-These checks were done by AI reading captions, notes and wiki text, **not by testing in-game**, and the calculators don't apply these rules, except for Condition Overload (see [Limits](#limits)). The file only updates with a new version of the server, and later patches aren't checked until then.
+These checks were done by AI reading captions, notes and wiki text, **not by testing in-game**, and the calculators don't apply these rules, except for Condition Overload (see [Limits](#limits)). When a newer video replaces an older method, the older rule says so under `newer_finding`. The file only updates with a new version of the server, and later patches aren't checked until then, but you can record what's changed yourself.
 
 ## Limits
 
