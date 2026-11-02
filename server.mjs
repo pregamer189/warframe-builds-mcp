@@ -7,6 +7,7 @@ import { alecaframeAccount } from "./lib/alecaframe.mjs";
 import { warframeBuild } from "./lib/frames.mjs";
 import { marketPrice, sellAdvice } from "./lib/market.mjs";
 import { costOfLeavingOut, buildVariations, exploreLoadout } from "./lib/loadout.mjs";
+import { applyPlayerChanges, checkChange } from "./lib/player-changes.mjs";
 import { deleteBuild, firstTime, forgetMechanic, getProfile, loadProfile, recordMechanic, saveBuild, suggestionLimits, updateProfile } from "./lib/profile.mjs";
 import { suggestWarframeBuild, suggestWeaponBuild } from "./lib/suggest.mjs";
 import { rulesFor, specialRules } from "./lib/special-rules.mjs";
@@ -278,6 +279,7 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
+        ability_strength: { type: "number", description: "Exalted weapons only: the Warframe's Ability Strength as a percentage, such as 198. Scales base damage, which many Exalted weapons do." },
         ...weaponSource,
         mods: modList,
         riven: rivenProp,
@@ -302,6 +304,8 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
+        ability_strength: { type: "number", description: "Exalted weapons only: the Warframe's Ability Strength as a percentage, such as 198. Scales base damage, which many Exalted weapons do." },
+        only_elements: { type: "array", items: { type: "string" }, description: "Only use these elements, to keep one from combining away, such as [\"electricity\"] for Melee Influence." },
         ...weaponSource,
         goal: { type: "string", description: "burst_dps, sustained_dps, heavy_attack or status_dps. Defaults to sustained_dps for guns and burst_dps for melee. heavy_attack is melee only." },
         only_mods: { ...modNames, description: "Only use these mods, such as the ones you own." },
@@ -433,11 +437,13 @@ const TOOLS = [
   },
   {
     name: "cost_of_leaving_out",
-    description: "What a build loses without a mod or arcane, such as one that's too expensive or not owned. Compares the best build with and without it, gives the replacement and a verdict. Be direct about a big loss, and offer a different build rather than patching this one.",
+    description: "What a build loses without a mod or arcane, such as one that's too expensive or not owned. Compares the best build, or the player's own through build_mods, with and without it, gives the replacement and a verdict. Pass goal for what the build is for, and too_expensive so the replacement isn't a dearer version. Be direct about a big loss, and offer a different build rather than patching this one.",
     inputSchema: {
       type: "object",
       properties: {
         leave_out: { type: "array", items: { type: "string" }, description: "Mods or arcanes to go without." },
+        too_expensive: { type: "boolean", description: "The reason is price, so Primed, Umbral, Archon and similar versions of it are left out too." },
+        build_mods: { type: "array", items: { type: "string" }, description: "The player's own mods, to measure their build rather than the best one." },
         warframe: { type: "string" },
         weapon: { type: "string" },
         goal: { type: ["string", "object"], description: "As in the suggest tools." },
@@ -467,10 +473,15 @@ const TOOLS = [
         build_impact: { type: "string", description: "What it means for builds." },
         kind: { type: "string", enum: ["game_change", "video", "player_note"] },
         source: { type: "object", description: "For a video: {creator, title, uploaded, url}.", properties: { creator: { type: "string" }, title: { type: "string" }, uploaded: { type: "string" }, url: { type: "string" } } },
+        change: {
+          type: "object",
+          description: "Makes the calculators follow it. A mod or arcane: {item, stacks} or {item, effects}, such as {item: \"Primary Merciless\", stacks: 6}. A weapon's Condition Overload: {condition_overload: {weapon, attack, behavior, share_pct}}, such as {condition_overload: {weapon: \"Arca Plasmor\", behavior: \"adding\"}}. Without it, only the note is saved.",
+          properties: { item: { type: "string" }, stacks: { type: "number" }, effects: { type: "object" }, condition_overload: { type: "object" } },
+        },
       },
       required: ["subjects", "reported"],
     },
-    run: recordMechanic,
+    run: ({ change, ...args }) => recordMechanic({ ...args, ...(change && { change: checkChange(change) }) }),
   },
   {
     name: "forget_mechanic",
@@ -627,6 +638,7 @@ async function handle({ method, params }) {
         const args = params.arguments ?? {};
         if (!typeMatches(args, "object")) throw new Error("Arguments must be an object.");
         validate(tool.inputSchema, args);
+        applyPlayerChanges();
         return { content: [{ type: "text", text: JSON.stringify(await tool.run(args), null, 2) }] };
       } catch (error) {
         return { content: [{ type: "text", text: error.message }], isError: true };

@@ -193,7 +193,6 @@ test("leaving something out gets a plain verdict", () => {
   assert.match(big.advice, /different build/);
   assert.ok(big.results[0].loss_pct > 15);
   const small = call("cost_of_leaving_out", { weapon: "Soma Prime", leave_out: ["Rime Rounds"] });
-  assert.equal(small.verdict, "barely_matters");
   assert.deepEqual(small.not_in_the_best_build, ["Rime Rounds"]);
   const frame = call("cost_of_leaving_out", { warframe: "Saryn Prime", goal: "strength", leave_out: ["Blind Rage"] });
   assert.ok(frame.results[0].loss_pct > 0);
@@ -211,6 +210,73 @@ test("what a player records is used first, and can be removed", () => {
   assert.notEqual(call("weapon_build", { weapon: "Kuva Sobek", mods: ["Acid Shells"] }).special_rules?.[0]?.status, "player_reported");
   assert.match(call("forget_mechanic", { id: 99 }).error, /No recorded/);
   assert.match(call("record_mechanic", { subjects: [], reported: "x" }).error, /subjects/);
+});
+
+test("a recorded change moves the numbers, and removing it restores them", () => {
+  const home = mkdtempSync(join(tmpdir(), "wf-change-"));
+  const env = { WARFRAME_BUILDS_HOME: home };
+  const run = (name, args) => {
+    const replies = spawnSync(process.execPath, [server], { input: `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } })}\n`, encoding: "utf8", env: { ...process.env, ...env, WARFRAME_BUILDS_OFFLINE: "1" } });
+    const { content, isError } = JSON.parse(replies.stdout.trim()).result;
+    return isError ? { error: content[0].text } : JSON.parse(content[0].text);
+  };
+  const soma = () => run("weapon_build", { weapon: "Soma Prime", arcanes: ["Primary Merciless"], conditionals: true }).damage_per_shot;
+  const before = soma();
+  const { recorded, numbers_changed: changed } = run("record_mechanic", { subjects: ["Primary Merciless"], reported: "Only 6 stacks now.", kind: "game_change", change: { item: "Primary Merciless", stacks: 6 } });
+  assert.equal(changed, true);
+  assert.ok(soma() < before);
+  run("forget_mechanic", { id: recorded.id });
+  assert.equal(soma(), before);
+  const plasmor = () => run("weapon_build", { weapon: "Arca Plasmor", mods: ["Point Blank", "Galvanized Savvy"], conditionals: true, status_types_on_target: 2 });
+  assert.equal(plasmor().condition_overload.behavior, "multiplying");
+  const multiplied = plasmor().damage_per_shot;
+  run("record_mechanic", { subjects: ["Arca Plasmor"], reported: "It only adds now.", change: { condition_overload: { weapon: "Arca Plasmor", behavior: "adding" } } });
+  assert.equal(plasmor().condition_overload.behavior, "adding");
+  assert.match(plasmor().condition_overload.source, /You recorded/);
+  assert.ok(plasmor().damage_per_shot < multiplied);
+  // A report about the Plasmor doesn't lead a Stahlta's rules.
+  assert.notEqual(run("weapon_build", { weapon: "Stahlta", mods: ["Galvanized Aptitude"] }).special_rules?.[0]?.subjects[0], "Arca Plasmor");
+  assert.match(run("record_mechanic", { subjects: ["X"], reported: "y", change: { item: "Not A Mod", stacks: 2 } }).error, /can't find/);
+  assert.match(run("record_mechanic", { subjects: ["X"], reported: "y", change: { item: "Serration", stacks: 2 } }).error, /no stacking effect/);
+  rmSync(home, { recursive: true, force: true });
+});
+
+test("what the trial runs tripped over stays fixed", () => {
+  // Garbled source numbers aren't multiplied up, and a subsume weakened by the Helminth shows no false value.
+  const sol = call("warframe_build", { warframe: "Wisp" }).ability_numbers.find((entry) => entry.ability === "Sol Gate");
+  assert.equal(JSON.stringify(sol).includes("2200770"), false);
+  const roar = call("warframe_build", { warframe: "Wisp", subsume: { ability: "Roar", replaces: "Wil-O-Wisp" } });
+  assert.ok(roar.ability_numbers.find((entry) => entry.ability === "Roar").strength.every((line) => line.at_build === undefined));
+  assert.match(call("weapon_build", { weapon: "Braton", target: "Steel Path" }).error, /steel_path/);
+  // Subsumes are offered with no theme, and augments are listed.
+  const wisp = call("explore_loadout", { warframe: "Wisp", weapons: ["Torid"], theme: "Steel Path" });
+  assert.ok(wisp.subsume_options.candidates.length > 0);
+  assert.ok(wisp.augments.some((augment) => augment.name === "Critical Surge"));
+  assert.ok(wisp.abilities_that_touch_weapons.some((ability) => ability.ability === "Reservoirs"));
+  assert.ok(call("explore_loadout", { warframe: "Wisp" }).subsume_options.candidates.length > 0);
+  assert.match(call("explore_loadout", { warframe: "Wisp", no_subsume: true }).left_out[0], /gives up options such as \w/);
+  // Variations keep the kit working and can be copied into a build.
+  const kept = call("build_variations", { warframe: "Wisp" }).variations;
+  const copied = kept[0];
+  assert.ok(copied.mods[0].name && copied.mods.every((mod) => "slot_polarity" in mod));
+  assert.ok(kept.every((variation) => variation.stats.duration >= 75));
+  // Too expensive doesn't mean a dearer version, and an unused mod isn't called harmless.
+  const cheap = call("cost_of_leaving_out", { warframe: "Wisp", goal: "duration", leave_out: ["Primed Continuity"], too_expensive: true });
+  assert.equal(cheap.without_it.mods.includes("Archon Continuity"), false);
+  assert.equal(call("cost_of_leaving_out", { weapon: "Soma Prime", leave_out: ["Rime Rounds"] }).verdict, "not_used");
+  assert.match(call("cost_of_leaving_out", { warframe: "Wisp", leave_out: ["Primed Continuity"] }).error, /Pass goal/);
+  const own = call("cost_of_leaving_out", { warframe: "Wisp", goal: "duration", forma: 3, leave_out: ["Primed Continuity"], too_expensive: true, build_mods: ["Primed Continuity", "Stretch", "Primed Streamline"] });
+  assert.ok(own.results[0].with > own.results[0].without);
+  // Peaks come with what the build does before its stacks, and elements can be kept apart.
+  const peak = call("suggest_weapon_build", { weapon: "Soma Prime", conditionals: true, status_types_on_target: 3 });
+  assert.ok(peak.before_triggers.sustained_dps < peak.build.sustained_dps);
+  assert.match(call("suggest_weapon_build", { weapon: "Soma Prime" }).triggers_note, /conditionals/);
+  const pure = call("suggest_weapon_build", { weapon: "Skana", only_elements: ["electricity"], mods: ["Shocking Touch"] });
+  assert.equal(pure.mods.some((mod) => ["Primed Fever Strike", "Molten Impact"].includes(mod.name)), false);
+  // Exalted weapons scale with the strength passed in, and others refuse it.
+  const claws = (extra) => call("weapon_build", { weapon: "Shadow Claws", ...extra }).damage_per_shot;
+  assert.ok(Math.abs(claws({ ability_strength: 200 }) / claws({}) - 2) < 0.01);
+  assert.match(call("weapon_build", { weapon: "Braton", ability_strength: 200 }).error, /isn't an Exalted/);
 });
 
 test("attacks the wiki lists above our damage say so", () => {

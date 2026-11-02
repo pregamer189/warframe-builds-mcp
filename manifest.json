@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "warframe-builds",
   "display_name": "Warframe Builds",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "A Warframe builder companion: themed builds from synergies, calculators, your saved mods and builds, and live market prices.",
   "author": { "name": "Elias Blomberg", "url": "https://github.com/pregamer189" },
   "repository": { "type": "git", "url": "https://github.com/pregamer189/warframe-builds-mcp" },

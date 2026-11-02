@@ -44,7 +44,7 @@ The server runs on your computer, so it can't run there. [A lite skill](INSTALL.
 | `explore_loadout` | The whole character together: Warframe, subsume, weapons and companion, with what links them |
 | `build_variations` | Several builds for one item: by ability priority, or max, 75% and 50% of a stat, with what each gives up |
 | `cost_of_leaving_out` | What a build loses without a mod or arcane, the replacement, and a plain verdict |
-| `record_mechanic`, `forget_mechanic` | Save what you tell it changed, or findings from a video, so later builds use them |
+| `record_mechanic`, `forget_mechanic` | Save what you tell it changed, or findings from a video. A change to stacks, effects or Condition Overload updates the calculators too |
 | `special_rules` | Finds reported mechanics the game's text doesn't explain, with date, source and later patches |
 | `get_profile`, `update_profile` | Show and change your saved mods, items, Rivens and notes |
 | `save_build`, `delete_saved_build` | Keep the builds you like |
