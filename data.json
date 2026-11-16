@@ -1,7 +1,7 @@
 {
  "meta": {
   "format": 2,
-  "imported": "2026-11-09",
+  "imported": "2026-11-16",
   "sources": [
    "WFCD/warframe-items (MIT)",
    "wiki.warframe.com data modules"
@@ -10607,7 +10607,7 @@
    "mastery": 11,
    "polarities": [],
    "exilusPolarity": "naramon",
-   "trigger": "Auto",
+   "trigger": "Auto / Semi",
    "tags": [
     "PROJECTILE",
     "ASSAULT_AMMO"
