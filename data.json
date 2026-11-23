@@ -1,7 +1,7 @@
 {
  "meta": {
   "format": 2,
-  "imported": "2026-11-16",
+  "imported": "2026-11-23",
   "sources": [
    "WFCD/warframe-items (MIT)",
    "wiki.warframe.com data modules"
@@ -7171,7 +7171,7 @@
       "strength": "15 (Blast damage on capsule hit); 150 (Electricity damage per discharge); 25 (Electricity damage per second); 50 % (Electricity status chance)",
       "duration": "10 (number of charges)",
       "range": "6 m (shock radius)",
-      "misc": "? % (Blast status chance); 1 s (discharge interval); 4 (limit of active drones)"
+      "misc": "1 s (discharge interval); 4 (limit of active drones)"
      }
     },
     {
@@ -7182,7 +7182,7 @@
       "strength": "15 (Blast damage on orb hit); 250 (Slash damage on tether); 300 (Puncture damage per nail)",
       "duration": "25 s",
       "range": "20 m (tether range)",
-      "misc": "?% (Blast status chance on orb hit); 2 (tether max targets); 50% (flechette critical chance); 2.0x (flechette critical multiplier); forced Puncture status effect on flechette; 10 m (flechette target radius); 4 (max orbs active); 1.0x (flechette damage multiplier per 10 enemy levels); 4 (max orbs active)"
+      "misc": "2 (tether max targets); 50% (flechette critical chance); 2.0x (flechette critical multiplier); forced Puncture status effect on flechette; 10 m (flechette target radius); 4 (max orbs active); 1.0x (flechette damage multiplier per 10 enemy levels); 4 (max orbs active)"
      }
     },
     {
@@ -7192,7 +7192,7 @@
      "scaling": {
       "strength": "15 (Blast damage on beacon hit); 1,1,2,2,500 (Blast damage on explosion)",
       "range": "? / ? / ? / 7 m (blast radius)",
-      "misc": "2x (damage to Overguard); 1.5 s (strike delay); 1.0x (damage multiplier per 10 enemy levels); ?% (beacon Blast status chance); 100% (laser Blast status chance); 0.73s (grounded cast time); 0.94s (in-air cast time)"
+      "misc": "2x (damage to Overguard); 1.5 s (strike delay); 1.0x (damage multiplier per 10 enemy levels); 100% (laser Blast status chance); 0.73s (grounded cast time); 0.94s (in-air cast time)"
      }
     },
     {
@@ -7203,7 +7203,7 @@
       "strength": "15 (Blast damage on device hit); 10 % (armor removal per second); 20 armor per second (bastille armor buff rate); 50 (Magnetic damage per second in vortex); 40% (vortex status chance)",
       "duration": "15 s (bastille duration); 15 s (vortex duration); 10 s (armor buff duration); 3 s (auto collapse vortex duration)",
       "range": "10 m (capture radius)",
-      "misc": "?% (Blast status chance); 2x (armor buff rate from armored enemies); unlimited (armor buff duration in field); 1,500 (armor bonus cap); 4 bastille cap; 4 vortex cap"
+      "misc": "2x (armor buff rate from armored enemies); unlimited (armor buff duration in field); 1,500 (armor bonus cap); 4 bastille cap; 4 vortex cap"
      }
     }
    ]
@@ -7242,7 +7242,7 @@
       "strength": "15 (Blast damage on capsule hit); 150 (Electricity damage per discharge); 25 (Electricity damage per second); 50 % (Electricity status chance)",
       "duration": "10 (number of charges)",
       "range": "6 m (shock radius)",
-      "misc": "? % (Blast status chance); 1 s (discharge interval); 4 (limit of active drones)"
+      "misc": "1 s (discharge interval); 4 (limit of active drones)"
      }
     },
     {
@@ -7253,7 +7253,7 @@
       "strength": "15 (Blast damage on orb hit); 250 (Slash damage on tether); 300 (Puncture damage per nail)",
       "duration": "25 s",
       "range": "20 m (tether range)",
-      "misc": "?% (Blast status chance on orb hit); 2 (tether max targets); 50% (flechette critical chance); 2.0x (flechette critical multiplier); forced Puncture status effect on flechette; 10 m (flechette target radius); 4 (max orbs active); 1.0x (flechette damage multiplier per 10 enemy levels); 4 (max orbs active)"
+      "misc": "2 (tether max targets); 50% (flechette critical chance); 2.0x (flechette critical multiplier); forced Puncture status effect on flechette; 10 m (flechette target radius); 4 (max orbs active); 1.0x (flechette damage multiplier per 10 enemy levels); 4 (max orbs active)"
      }
     },
     {
@@ -7263,7 +7263,7 @@
      "scaling": {
       "strength": "15 (Blast damage on beacon hit); 1,1,2,2,500 (Blast damage on explosion)",
       "range": "? / ? / ? / 7 m (blast radius)",
-      "misc": "2x (damage to Overguard); 1.5 s (strike delay); 1.0x (damage multiplier per 10 enemy levels); ?% (beacon Blast status chance); 100% (laser Blast status chance); 0.73s (grounded cast time); 0.94s (in-air cast time)"
+      "misc": "2x (damage to Overguard); 1.5 s (strike delay); 1.0x (damage multiplier per 10 enemy levels); 100% (laser Blast status chance); 0.73s (grounded cast time); 0.94s (in-air cast time)"
      }
     },
     {
@@ -7274,7 +7274,7 @@
       "strength": "15 (Blast damage on device hit); 10 % (armor removal per second); 20 armor per second (bastille armor buff rate); 50 (Magnetic damage per second in vortex); 40% (vortex status chance)",
       "duration": "15 s (bastille duration); 15 s (vortex duration); 10 s (armor buff duration); 3 s (auto collapse vortex duration)",
       "range": "10 m (capture radius)",
-      "misc": "?% (Blast status chance); 2x (armor buff rate from armored enemies); unlimited (armor buff duration in field); 1,500 (armor bonus cap); 4 bastille cap; 4 vortex cap"
+      "misc": "2x (armor buff rate from armored enemies); unlimited (armor buff duration in field); 1,500 (armor bonus cap); 4 bastille cap; 4 vortex cap"
      }
     }
    ]
@@ -8165,10 +8165,10 @@
      "text": "Create deadly tornadoes that seek out and engulf enemies. Tornadoes deal the elemental Damage Type they absorb the most. Shoot engulfed enemies to inflict extra damage. Hold for stationary tornadoes or tap for wandering ones.",
      "cost": 100,
      "scaling": {
-      "strength": "160 (damage per 0.25s)",
+      "strength": "160 (damage per second)",
       "duration": "20 s",
       "range": "25 m (spawn radius)",
-      "misc": "3 (number of tornadoes); unlimited (cast range); 100 % (absorbed damage distribution); 200 % (critical damage multiplier); 9 m (tornado height); 5 m/s (move speeds); 10 m (pull radius)"
+      "misc": "3 (number of tornadoes); unlimited (cast range); 100 % (absorbed damage distribution); 200 % (critical damage multiplier); 10 % (tornado status chance per hit); 9 m (tornado height); 5 m/s (move speeds); 10 m (pull radius)"
      }
     }
    ]
@@ -8235,10 +8235,10 @@
      "text": "Create deadly tornadoes that seek out and engulf enemies. Tornadoes deal the elemental Damage Type they absorb the most. Shoot engulfed enemies to inflict extra damage. Hold for stationary tornadoes or tap for wandering ones.",
      "cost": 100,
      "scaling": {
-      "strength": "160 (damage per 0.25s)",
+      "strength": "160 (damage per second)",
       "duration": "20 s",
       "range": "25 m (spawn radius)",
-      "misc": "3 (number of tornadoes); unlimited (cast range); 100 % (absorbed damage distribution); 200 % (critical damage multiplier); 9 m (tornado height); 5 m/s (move speeds); 10 m (pull radius)"
+      "misc": "3 (number of tornadoes); unlimited (cast range); 100 % (absorbed damage distribution); 200 % (critical damage multiplier); 10 % (tornado status chance per hit); 9 m (tornado height); 5 m/s (move speeds); 10 m (pull radius)"
      }
     }
    ]
@@ -76603,6 +76603,12 @@
    }
   },
   "Steflos": {
+   "Normal Attack": {
+    "behavior": "multiplying",
+    "ratio": 1
+   }
+  },
+  "Steflos Prime": {
    "Normal Attack": {
     "behavior": "multiplying",
     "ratio": 1
